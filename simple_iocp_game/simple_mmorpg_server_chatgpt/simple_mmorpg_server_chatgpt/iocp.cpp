@@ -1,14 +1,19 @@
 #include "stdafx.h"
 #include "iocp.h"
 
-IOCP::IOCP()
+IOCP::IOCP() : ret{ 0 }, addr_size{ sizeof(client_addr) }, handle_iocp{ CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0) }
 {
-	
+	memset(&server_addr, 0, sizeof(server_addr));
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(PORT_NUM);
+	server_addr.sin_addr.S_un.S_addr = INADDR_ANY;
+	accept_over.SetOverType(OVER_TYPE::ACCEPT);
 }
 
-IOCP::~IOCP()
+void IOCP::Member_Initialize()
 {
-
+	server_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+	client_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 }
 
 void IOCP::Error_Display(const char* msg, int err_no)
@@ -40,8 +45,8 @@ void IOCP::worker()
 				cout << "Logout on client[" << key << "]\n";
 				// 해당 key 유저 로그아웃 처리 필요
 				if (OVER_TYPE::SEND == ext_over->GetOverType()) delete ext_over;
-				continue;
 			}
+			continue;
 		}
 
 		// 각종 처리 필요
@@ -63,29 +68,20 @@ void IOCP::Initialize()
 	ret = WSAStartup(MAKEWORD(2, 2), &WASData);
 	if (ret != 0) Error_Display("WSAStartup Error : ", WSAGetLastError());
 	
-	server_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	memset(&server_addr, 0, sizeof(server_addr));
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(PORT_NUM);
-	server_addr.sin_addr.S_un.S_addr = INADDR_ANY;
+	Member_Initialize();
 	
 	ret = bind(server_socket, reinterpret_cast<sockaddr*>(&server_addr), sizeof(server_addr));
 	if (ret != 0) Error_Display("bind Error : ", WSAGetLastError());
-	
+
 	ret = listen(server_socket, SOMAXCONN);
 	if (ret != 0) Error_Display("listen Error : ", WSAGetLastError());
-	
-	int addr_size = sizeof(client_addr);	
-	
-	handle_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
+
 	CreateIoCompletionPort(reinterpret_cast<HANDLE>(server_socket), handle_iocp, 9999, 0);
-	client_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	accept_over.SetOverType(OVER_TYPE::ACCEPT);
 	AcceptEx(server_socket, client_socket, accept_over.GetSendBuf(), 0, addr_size + 16, addr_size + 16, 0, &accept_over.GetWSAOverlapped());
-	
+
 	vector<thread> worker_threads;
 	for (int i = 0; i < THREADS_NUM; ++i)
-		worker_threads.emplace_back(&IOCP::worker, this);	
+		worker_threads.emplace_back(&IOCP::worker, this);
 	for (auto& th : worker_threads)
 		th.join();
 
