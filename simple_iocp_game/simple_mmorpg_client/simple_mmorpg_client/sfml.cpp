@@ -19,12 +19,16 @@ void Sfml::Loop()
 			if (event.type == Event::KeyPressed) {				
 				switch (event.key.code) {
 				case sf::Keyboard::Left:
+					client.move(0);
 					break;
-				case sf::Keyboard::Right:					
+				case sf::Keyboard::Right:
+					client.move(1);
 					break;
 				case sf::Keyboard::Up:
+					client.move(2);
 					break;
 				case sf::Keyboard::Down:
+					client.move(3);
 					break;
 				case sf::Keyboard::Escape:
 					window.close();
@@ -33,7 +37,8 @@ void Sfml::Loop()
 			}
 		}
 
-		window.clear(Color::Yellow);
+		window.clear(Color::Blue);
+		client.draw(window);
 		window.display();
 	}	
 }

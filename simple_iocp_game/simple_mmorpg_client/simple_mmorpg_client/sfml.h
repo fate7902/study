@@ -1,17 +1,11 @@
 #pragma once
-#include "stdafx.h"
-
-constexpr auto SCREEN_WIDTH = 9;
-constexpr auto SCREEN_HEIGHT = 9;
-constexpr auto TILE_WIDTH = 65;
-
-constexpr auto WINDOW_WIDTH = TILE_WIDTH * SCREEN_WIDTH + 10;
-constexpr auto WINDOW_HEIGHT = TILE_WIDTH * SCREEN_WIDTH + 10;
+#include "client.h"
 
 class Sfml
 {
 private:
 	RenderWindow window;
+	Client client;
 
 public:
 	Sfml() = default;
@@ -21,6 +15,5 @@ public:
 
 private:
 	void Initialize();
-
 };
 

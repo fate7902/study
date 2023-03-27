@@ -20,3 +20,11 @@ using namespace sf;
 #pragma comment (lib, "opengl32.lib")
 #pragma comment (lib, "winmm.lib")
 #pragma comment (lib, "ws2_32.lib")
+
+constexpr auto SCREEN_WIDTH = 9;
+constexpr auto SCREEN_HEIGHT = 9;
+constexpr auto TILE_WIDTH = 53;
+constexpr auto TILE_HEIGHT = 45;
+
+constexpr auto WINDOW_WIDTH = TILE_WIDTH * SCREEN_WIDTH + 10;
+constexpr auto WINDOW_HEIGHT = TILE_HEIGHT * SCREEN_HEIGHT + 10;

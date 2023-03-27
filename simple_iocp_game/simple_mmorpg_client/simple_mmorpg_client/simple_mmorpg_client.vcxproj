@@ -163,6 +163,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="client.h" />
+    <ClInclude Include="object.h" />
     <ClInclude Include="sfml.h" />
     <ClInclude Include="include\SFML\Config.hpp" />
     <ClInclude Include="include\SFML\Graphics.hpp" />
@@ -246,6 +248,8 @@
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="client.cpp" />
+    <ClCompile Include="object.cpp" />
     <ClCompile Include="sfml.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

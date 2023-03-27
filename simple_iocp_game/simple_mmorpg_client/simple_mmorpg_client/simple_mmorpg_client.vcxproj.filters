@@ -267,12 +267,24 @@
     <ClInclude Include="sfml.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="object.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="client.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="sfml.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="object.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="client.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
