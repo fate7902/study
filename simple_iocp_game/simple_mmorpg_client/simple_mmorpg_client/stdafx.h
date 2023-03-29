@@ -28,3 +28,6 @@ constexpr auto TILE_HEIGHT = 45;
 
 constexpr auto WINDOW_WIDTH = TILE_WIDTH * SCREEN_WIDTH + 10;
 constexpr auto WINDOW_HEIGHT = TILE_HEIGHT * SCREEN_HEIGHT + 10;
+
+constexpr auto PORT_NUM = 4000;
+constexpr auto SERVER_IP = "127.0.0.1";

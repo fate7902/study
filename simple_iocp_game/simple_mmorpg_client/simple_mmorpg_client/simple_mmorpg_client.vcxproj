@@ -164,6 +164,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="client.h" />
+    <ClInclude Include="network.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="sfml.h" />
     <ClInclude Include="include\SFML\Config.hpp" />
@@ -249,6 +250,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="client.cpp" />
+    <ClCompile Include="network.cpp" />
     <ClCompile Include="object.cpp" />
     <ClCompile Include="sfml.cpp" />
     <ClCompile Include="main.cpp" />

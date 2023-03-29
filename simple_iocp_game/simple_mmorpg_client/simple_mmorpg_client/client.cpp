@@ -62,3 +62,8 @@ void Client::move(int dir)
 		break;
 	}
 }
+
+Network& Client::GetNetwork()
+{
+	return network;
+}
