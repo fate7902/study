@@ -25,6 +25,7 @@ Client::~Client()
 
 void Client::draw(RenderWindow& window)
 {	
+	network.Recv();
 	for (int i = 0; i < SCREEN_WIDTH; ++i) {
 		for (int j = 0; j < SCREEN_HEIGHT; ++j) {
 			int tile_x = i;
@@ -44,26 +45,17 @@ void Client::draw(RenderWindow& window)
 	player.draw(window);
 }
 
-void Client::move(int dir)
+void Client::move(const MOVE_TYPE& action_type)
 {
-	switch (dir)
-	{
-	case 0: // left
-		player.move(player.x - TILE_WIDTH, player.y);
-		break;
-	case 1: // right
-		player.move(player.x + TILE_WIDTH, player.y);
-		break;
-	case 2: // up
-		player.move(player.x, player.y - TILE_HEIGHT);
-		break;
-	case 3: // down
-		player.move(player.x, player.y + TILE_HEIGHT);
-		break;
-	}
+	network.SendMove(action_type);
 }
 
 Network& Client::GetNetwork()
 {
 	return network;
+}
+
+Object& Client::GetPlayer()
+{
+	return player;
 }

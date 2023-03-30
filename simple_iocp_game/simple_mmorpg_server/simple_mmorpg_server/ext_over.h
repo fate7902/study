@@ -13,9 +13,11 @@ private:
 	
 public:
 	EXT_OVER();
+	EXT_OVER(char* protocol);
 	~EXT_OVER();
 
 	WSAOVERLAPPED& GetWSAOverlapped();
+	WSABUF& GetWsabuf();
 	char* GetSendBuf();
 
 	OVER_TYPE GetOverType();

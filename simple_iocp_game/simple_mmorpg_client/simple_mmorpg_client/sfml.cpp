@@ -3,7 +3,7 @@
 
 void Sfml::Initialize()
 {
-	client.GetNetwork().Initialize();
+	client.GetNetwork().Initialize(client.GetPlayer());
 	window.create(VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "2D Client");	
 }
 
@@ -19,21 +19,11 @@ void Sfml::Loop()
 				window.close();
 			if (event.type == Event::KeyPressed) {				
 				switch (event.key.code) {
-				case sf::Keyboard::Left:
-					client.move(0);
-					break;
-				case sf::Keyboard::Right:
-					client.move(1);
-					break;
-				case sf::Keyboard::Up:
-					client.move(2);
-					break;
-				case sf::Keyboard::Down:
-					client.move(3);
-					break;
-				case sf::Keyboard::Escape:
-					window.close();
-					break;
+				case Keyboard::Left: client.move(MOVE_TYPE::LEFT); break;
+				case Keyboard::Right: client.move(MOVE_TYPE::RIGHT); break;
+				case Keyboard::Up: client.move(MOVE_TYPE::UP); break;
+				case Keyboard::Down: client.move(MOVE_TYPE::DOWN); break;
+				case Keyboard::Escape: window.close(); break;
 				}
 			}
 		}

@@ -16,7 +16,8 @@ public:
 	~Client();
 
 	void draw(RenderWindow& window);
-	void move(int dir);
+	void move(const MOVE_TYPE& action_type);
 
 	Network& GetNetwork();
+	Object& GetPlayer();
 };

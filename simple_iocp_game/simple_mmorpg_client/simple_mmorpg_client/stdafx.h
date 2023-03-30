@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
 #include <iostream>
+#include "..\..\simple_mmorpg_server\simple_mmorpg_server\protocol.h"
 using namespace std;
 using namespace sf;
 
@@ -31,3 +32,5 @@ constexpr auto WINDOW_HEIGHT = TILE_HEIGHT * SCREEN_HEIGHT + 10;
 
 constexpr auto PORT_NUM = 4000;
 constexpr auto SERVER_IP = "127.0.0.1";
+
+constexpr auto BUF_SIZE = 256;

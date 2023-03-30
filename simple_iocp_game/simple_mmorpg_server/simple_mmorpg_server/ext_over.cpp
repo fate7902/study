@@ -9,6 +9,15 @@ EXT_OVER::EXT_OVER()
 	ZeroMemory(&over, sizeof(over));
 }
 
+EXT_OVER::EXT_OVER(char* protocol)
+{
+	wsabuf.len = protocol[0];
+	wsabuf.buf = send_buf;
+	ZeroMemory(&over, sizeof(over));
+	over_type = OVER_TYPE::SEND;
+	memcpy(send_buf, protocol, protocol[0]);
+}
+
 EXT_OVER::~EXT_OVER()
 {
 
@@ -17,6 +26,11 @@ EXT_OVER::~EXT_OVER()
 WSAOVERLAPPED& EXT_OVER::GetWSAOverlapped()
 {
 	return over;
+}
+
+WSABUF& EXT_OVER::GetWsabuf()
+{
+	return wsabuf;
 }
 
 char* EXT_OVER::GetSendBuf() 
