@@ -6,9 +6,23 @@ EXT_OVER::EXT_OVER() : wsabuf{ BUF_SIZE,  send_buf }, over{}, over_type{ OVER_TY
 	ZeroMemory(&over, sizeof(over));
 }
 
+EXT_OVER::EXT_OVER(char* protocol)
+{
+	wsabuf.len = protocol[0];
+	wsabuf.buf = send_buf;
+	ZeroMemory(&over, sizeof(over));
+	over_type = OVER_TYPE::SEND;
+	memcpy(send_buf, protocol, wsabuf.len);
+}
+
 WSAOVERLAPPED& EXT_OVER::GetWSAOverlapped()
 {
 	return over;
+}
+
+WSABUF& EXT_OVER::GetWsabuf()
+{
+	return wsabuf;
 }
 
 char* EXT_OVER::GetSendBuf()
