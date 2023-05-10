@@ -143,13 +143,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="client.cpp" />
     <ClCompile Include="ext_over.cpp" />
     <ClCompile Include="iocp.cpp" />
+    <ClCompile Include="lfvec.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="client.h" />
     <ClInclude Include="ext_over.h" />
     <ClInclude Include="iocp.h" />
+    <ClInclude Include="lfvec.h" />
     <ClInclude Include="protocol.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

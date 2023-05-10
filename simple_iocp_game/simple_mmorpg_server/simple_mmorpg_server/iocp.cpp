@@ -3,7 +3,7 @@
 
 IOCP::IOCP()
 {
-	
+	for (int i = 0; i < MAX_USER; ++i) ID_list.emplace_back(i);
 }
 
 IOCP::~IOCP()
@@ -27,10 +27,7 @@ void IOCP::Error_Display(const char* msg, int err_no)
 
 int IOCP::GetClientID()
 {
-	for (int i = 0; i < 10; ++i) {
-		if (temp_client[i].use == false) return i;
-	}
-	return -1;
+	return ID_list.empty();
 }
 
 void IOCP::worker()
@@ -64,14 +61,11 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 	{
 		int client_id = GetClientID();
 		if (client_id != -1) {
-			cout << "Client [" << client_id << "번] 님이 입장하셨습니다.\n";
-			temp_client[client_id].x = 3;
-			temp_client[client_id].y = 4;
-			temp_client[client_id].id = client_id;
-			temp_client[client_id].prev_remain = 0;
-			temp_client[client_id].socket = client_socket;
+			cout << "Client [" << client_id << "번] 님이 입장하셨습니다.\n";						
+			clients[client_id].SetPrevRemain(0);
+			clients[client_id].SetSocket(client_socket);			
 			CreateIoCompletionPort(reinterpret_cast<HANDLE>(client_socket), handle_iocp, client_id, 0);
-			temp_client[client_id].do_recv();
+			clients[client_id].recv();
 			client_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 		}
 		else {
@@ -86,7 +80,7 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 	{
 		// 접속 종료 처리
 		if (0 == len) { }
-		int remain_data = len + temp_client[key].prev_remain;
+		int remain_data = len + clients[key].GetPrevRemain();
 		char* p = ext_over->GetSendBuf();
 		int protocol_size = p[0];
 		while (remain_data > 0 && protocol_size <= remain_data) {
@@ -94,11 +88,11 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 			p = p + protocol_size;
 			remain_data = remain_data - protocol_size;
 		}
-		temp_client[key].prev_remain = remain_data;
+		clients[key].SetPrevRemain(remain_data);
 		if (remain_data > 0) {
 			memcpy(ext_over->GetSendBuf(), p, remain_data);
 		}
-		temp_client[key].do_recv();
+		clients[key].recv();
 		break;
 	}
 	case OVER_TYPE::SEND:
@@ -112,14 +106,39 @@ void IOCP::ProtocolProcessing(const int& client_id, char* protocol)
 	case CS_LOGIN:
 	{
 		CS_LOGIN_PROTOCOL* p = reinterpret_cast<CS_LOGIN_PROTOCOL*>(protocol);
-		cout << p->name << " 님이 접속하셨습니다.\n";
+		cout << "[" << p->name << "] 님이 접속하셨습니다.\n";
+		clients[client_id].SetPosition(0, 0);
+		clients[client_id].send_login_info();
+		break;
+	}
+	case CS_MOVE:
+	{
+		CS_MOVE_PROTOCOL* p = reinterpret_cast<CS_MOVE_PROTOCOL*>(protocol);
+		pair<int, int> old_pos = clients[client_id].GetPosition();
+		switch (p->move_type) {
+		case MOVE_TYPE::LEFT:
+			if (old_pos.first - 1 >= 0) clients[client_id].SetPosition(old_pos.first - 1, old_pos.second);
+			break;
+		case MOVE_TYPE::RIGHT:
+			if (old_pos.first + 1 <= MAP_WIDTH) clients[client_id].SetPosition(old_pos.first + 1, old_pos.second);
+			break;
+		case MOVE_TYPE::UP:
+			if (old_pos.second - 1 >= 0) clients[client_id].SetPosition(old_pos.first, old_pos.second - 1);
+			break;
+		case MOVE_TYPE::DOWN:
+			if (old_pos.second + 1 <= MAP_HEIGHT) clients[client_id].SetPosition(old_pos.first, old_pos.second + 1);
+			break;
+		}
+		clients[client_id].send_move_info();
 		break;
 	}
 	}
 }
 
-void IOCP::Initialize()
+void IOCP::Initialize(CLIENT* cl)
 {
+	clients = cl;
+
 	WSADATA WASData;
 	ret = WSAStartup(MAKEWORD(2, 2), &WASData);
 	if (ret != 0) Error_Display("WSAStartup Error : ", WSAGetLastError());

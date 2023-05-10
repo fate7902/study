@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "network.h"
 
-void Network::Initialize(Object& pl)
+extern int g_x, g_y;
+
+void Network::Initialize(Object* pl)
 {
 	status = socket.connect(SERVER_IP, PORT_NUM);
 	socket.setBlocking(false);
@@ -53,8 +55,21 @@ void Network::ProtocolProcessing(char* ptr)
 	case SC_LOGIN:
 	{
 		SC_LOGIN_PROTOCOL* p = reinterpret_cast<SC_LOGIN_PROTOCOL*>(ptr);
-		player.x = p->x;
-		player.y = p->y;
+		player->x = p->x;
+		player->y = p->y;
+		g_x = player->x - 4;
+		g_y = player->y - 4;
+		player->move(player->x, player->y);
+		break;
+	}
+	case SC_TRANS:
+	{
+		SC_MOVE_PROTOCOL* p = reinterpret_cast<SC_MOVE_PROTOCOL*>(ptr);
+		player->x = p->x;
+		player->y = p->y;
+		g_x = player->x - 4;
+		g_y = player->y - 4;
+		player->move(player->x, player->y);
 		break;
 	}
 	}

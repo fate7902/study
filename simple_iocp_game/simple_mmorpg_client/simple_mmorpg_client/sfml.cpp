@@ -3,7 +3,7 @@
 
 void Sfml::Initialize()
 {
-	client.GetNetwork().Initialize(client.GetPlayer());
+	client.GetNetwork().Initialize(&client.GetPlayer());
 	window.create(VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "2D Client");	
 }
 

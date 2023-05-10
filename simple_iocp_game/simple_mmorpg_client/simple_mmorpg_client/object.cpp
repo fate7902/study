@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "object.h"
 
+extern int g_x, g_y;
+
 Object::Object() : showing{ false }, x{ 0 }, y{ 0 }
 {
 }
@@ -35,6 +37,14 @@ void Object::move(int pos_x, int pos_y)
 void Object::draw(RenderWindow& window)
 {
 	if (!showing) return;
-	sprite.setPosition((float)x, (float)y);
+	float rx = (x - g_x) * 53.f + 8;
+	float ry = (y - g_y) * 45.f + 8;
+	sprite.setPosition(rx, ry);
+	window.draw(sprite);
+}
+
+void Object::map_draw(RenderWindow& window)
+{
+	sprite.setPosition(x, y);
 	window.draw(sprite);
 }

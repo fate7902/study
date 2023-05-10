@@ -19,4 +19,5 @@ public:
 	void hide();
 	void move(int pos_x, int pos_y);
 	void draw(RenderWindow& window);
+	void map_draw(RenderWindow& window);
 };

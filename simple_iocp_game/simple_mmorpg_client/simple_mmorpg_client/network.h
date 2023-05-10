@@ -6,13 +6,13 @@ class Network
 private:
 	TcpSocket socket;
 	Socket::Status status;
-	Object player;
+	Object* player;
 
 public:
 	Network() = default;
 	~Network() = default;
 
-	void Initialize(Object& pl);
+	void Initialize(Object* pl);
 	const Socket::Status& GetSocketStatus();
 
 	void SendProtocol(void* protocol);
