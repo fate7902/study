@@ -38,9 +38,41 @@ void CLIENT::SetPosition(int new_x, int new_y)
     }
 }
 
+bool CLIENT::CalcDistance(const pair<int, int>& pos1, const pair<int, int>& pos2)
+{
+    int dx = pos1.first - pos2.first;
+    int dy = pos1.second - pos2.second;
+    return (dx * dx <= 4) && (dy * dy <= 4);
+}
+
+int CLIENT::GetID()
+{
+    return ID;
+}
+
 int CLIENT::GetPrevRemain()
 {
-    return 0;
+    return prev_remain;
+}
+
+void CLIENT::SetID(int id)
+{
+    ID = id;
+}
+
+void CLIENT::AddViewlist(int id)
+{
+    viewlist.insert(id);
+}
+
+bool CLIENT::FindViewlist(int id)
+{
+    return viewlist.exist(id);
+}
+
+void CLIENT::RemoveViewlist(int id)
+{
+    viewlist.erase(id);
 }
 
 void CLIENT::SetPrevRemain(int val)
@@ -69,9 +101,10 @@ void CLIENT::send(void* protocol)
     WSASend(socket, &sdata->GetWsabuf(), 1, 0, 0, &sdata->GetWSAOverlapped(), 0);
 }
 
-void CLIENT::send_login_info()
+void CLIENT::send_login_info(CLIENT& cl)
 {
     SC_LOGIN_PROTOCOL p;
+    p.id = cl.GetID();
     p.x = position.load().first;
     p.y = position.load().second;
     p.size = sizeof(SC_LOGIN_PROTOCOL);
@@ -79,12 +112,33 @@ void CLIENT::send_login_info()
     send(&p);
 }
 
-void CLIENT::send_move_info()
+void CLIENT::send_move_info(CLIENT& cl)
 {
     SC_MOVE_PROTOCOL p;
+    p.id = cl.GetID();
     p.x = position.load().first;
     p.y = position.load().second;
     p.size = sizeof(SC_LOGIN_PROTOCOL);
     p.type = SC_TRANS;
+    send(&p);
+}
+
+void CLIENT::send_add_object_info(CLIENT& cl)
+{
+    SC_ADD_OBJECT_PROTOCOL p;
+    p.id = cl.GetID();
+    p.x = cl.GetPosition().first;
+    p.y = cl.GetPosition().second;
+    p.size = sizeof(SC_ADD_OBJECT_PROTOCOL);
+    p.type = SC_ADD_OBJECT;
+    send(&p);
+}
+
+void CLIENT::send_remove_object_info(CLIENT& cl)
+{
+    SC_REMOVE_OBJECT_PROTOCOL p;
+    p.id = cl.GetID();
+    p.size = sizeof(SC_REMOVE_OBJECT_PROTOCOL);
+    p.type = SC_REMOVE_OBJECT;
     send(&p);
 }

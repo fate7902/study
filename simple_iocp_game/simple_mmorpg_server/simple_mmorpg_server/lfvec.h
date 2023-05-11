@@ -10,6 +10,8 @@ public:
 	~LFVEC();
 
 	void emplace_back(int val);
+	void insert(int val);
 	void erase(int val);
 	int empty();
+	bool exist(int val);
 };

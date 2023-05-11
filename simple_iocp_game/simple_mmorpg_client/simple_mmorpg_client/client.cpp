@@ -17,12 +17,21 @@ Client::Client()
 	player.setScale(0.3f, 0.23f);
 	player.move(4, 4);
 	player.show();
+	network.player = &player;
 }
 
 Client::~Client()
 {
 	delete map;
 	delete character;
+}
+
+void Client::initialize()
+{
+	for (int i = 0; i < MAX_USER; ++i) {		
+		players[i] = Object{ *character, 235, 290, 175, 195 };
+		players[i].setScale(0.3f, 0.23f);
+	}
 }
 
 void Client::draw(RenderWindow& window)
@@ -43,6 +52,10 @@ void Client::draw(RenderWindow& window)
 				tileB.map_draw(window);
 			}
 		}
+	}
+	for (int i = 0; i < MAX_USER; ++i) {
+		if (i == network.my_id) continue;		
+		players[i].draw(window);
 	}
 	player.draw(window);
 }

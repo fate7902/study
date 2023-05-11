@@ -11,9 +11,9 @@ public:
 	Sfml() = default;
 	~Sfml() = default;
 
-	void Loop();
+	void Loop(Object* pl);
 
 private:
-	void Initialize();
+	void Initialize(Object* pl);
 };
 

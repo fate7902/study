@@ -8,6 +8,7 @@ private:
 
 public:
 	int x, y;
+	int id;
 
 public:
 	Object();

@@ -1,15 +1,17 @@
 #include "stdafx.h"
 #include "sfml.h"
 
-void Sfml::Initialize()
+void Sfml::Initialize(Object* pl)
 {
-	client.GetNetwork().Initialize(&client.GetPlayer());
+	client.players = pl;
+	client.GetNetwork().Initialize(pl);
+	client.initialize();
 	window.create(VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "2D Client");	
 }
 
-void Sfml::Loop()
+void Sfml::Loop(Object* pl)
 {
-	Initialize();
+	Initialize(pl);
 	while (window.isOpen())
 	{
 		Event event;

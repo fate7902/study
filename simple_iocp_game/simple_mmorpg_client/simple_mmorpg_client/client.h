@@ -12,8 +12,13 @@ private:
 	Network network;
 
 public:
+	Object* players;
+
+public:
 	Client();
 	~Client();
+
+	void initialize();
 
 	void draw(RenderWindow& window);
 	void move(const MOVE_TYPE& action_type);

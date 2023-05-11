@@ -26,6 +26,26 @@ void LFVEC::emplace_back(int val)
 	use.store(false);
 }
 
+void LFVEC::insert(int val)
+{
+	bool old_use = false;
+	while (!use.compare_exchange_strong(old_use, true)) {
+		old_use = false;
+	}
+
+	vector<int>* old_vec = vec.load();
+	auto iter = find(old_vec->begin(), old_vec->end(), val);
+	if (iter != old_vec->end()) {
+		use.store(false);
+		return;
+	}
+
+	vector<int>* new_vec = new vector<int>(*old_vec);
+	new_vec->emplace_back(val);
+	vec.store(new_vec);
+	use.store(false);
+}
+
 void LFVEC::erase(int val)
 {
 	bool old_use = false;
@@ -60,4 +80,18 @@ int LFVEC::empty()
 	vec.store(new_vec);
 	use.store(false);
 	return value;
+}
+
+bool LFVEC::exist(int val)
+{
+	bool old_use = false;
+	while (!use.compare_exchange_strong(old_use, true)) {
+		old_use = false;
+	}
+
+	vector<int>* old_vec = vec.load();
+	auto iter = find(old_vec->begin(), old_vec->end(), val);
+	use.store(false);
+	if (iter == old_vec->end()) return false;
+	else return true;
 }

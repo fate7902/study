@@ -63,7 +63,9 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 		if (client_id != -1) {
 			cout << "Client [" << client_id << "번] 님이 입장하셨습니다.\n";						
 			clients[client_id].SetPrevRemain(0);
-			clients[client_id].SetSocket(client_socket);			
+			clients[client_id].SetSocket(client_socket);
+			clients[client_id].SetID(client_id);
+			clients[client_id].SetUsing(true);
 			CreateIoCompletionPort(reinterpret_cast<HANDLE>(client_socket), handle_iocp, client_id, 0);
 			clients[client_id].recv();
 			client_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
@@ -108,7 +110,21 @@ void IOCP::ProtocolProcessing(const int& client_id, char* protocol)
 		CS_LOGIN_PROTOCOL* p = reinterpret_cast<CS_LOGIN_PROTOCOL*>(protocol);
 		cout << "[" << p->name << "] 님이 접속하셨습니다.\n";
 		clients[client_id].SetPosition(0, 0);
-		clients[client_id].send_login_info();
+		clients[client_id].send_login_info(clients[client_id]);
+
+		// 로그인한 유저와 이미 접속중인 유저간의 거리측정을 통해
+		// 서로의 시야 안에 있는 지 측정 후 리스트 저장
+		pair<int, int> pos = clients[client_id].GetPosition();
+		for (int i = 0; i < MAX_USER; ++i) {
+			if (clients[i].GetUsing() == false) continue;
+			if (i == client_id) continue;
+			if(!clients[client_id].CalcDistance(pos, clients[i].GetPosition())) continue;
+			clients[client_id].AddViewlist(i);
+			clients[i].AddViewlist(client_id);
+			// 서로에게 해당 정보 전송
+			clients[client_id].send_add_object_info(clients[i]);
+			clients[i].send_add_object_info(clients[client_id]);
+		}
 		break;
 	}
 	case CS_MOVE:
@@ -129,7 +145,34 @@ void IOCP::ProtocolProcessing(const int& client_id, char* protocol)
 			if (old_pos.second + 1 <= MAP_HEIGHT) clients[client_id].SetPosition(old_pos.first, old_pos.second + 1);
 			break;
 		}
-		clients[client_id].send_move_info();
+		clients[client_id].send_move_info(clients[client_id]);
+
+		// 변화한 위치 값으로 인한 시야 범위 재측정
+		pair<int, int> pos = clients[client_id].GetPosition();
+		// 새로 시야에 들어오는 지 확인
+		for (int i = 0; i < MAX_USER; ++i) {
+			if (clients[i].GetUsing() == false) continue;
+			if (i == client_id) continue;
+			if (!clients[client_id].CalcDistance(pos, clients[i].GetPosition())) continue;
+			clients[client_id].AddViewlist(i);
+			clients[i].AddViewlist(client_id);
+			// 서로에게 해당 정보 전송
+			clients[client_id].send_add_object_info(clients[i]);
+			clients[i].send_add_object_info(clients[client_id]);
+		}
+		// 시야에서 벗어나는 지 확인
+		for (int i = 0; i < MAX_USER; ++i) {
+			if (clients[i].GetUsing() == false) continue;
+			if (i == client_id) continue;
+			if (!clients[client_id].FindViewlist(i)) continue;
+			if (!clients[client_id].CalcDistance(pos, clients[i].GetPosition())) {
+				clients[client_id].RemoveViewlist(i);
+				clients[i].RemoveViewlist(client_id);
+				// 서로에게 해당 정보 전송
+				clients[client_id].send_remove_object_info(clients[i]);
+				clients[i].send_remove_object_info(clients[client_id]);
+			}
+		}		
 		break;
 	}
 	}

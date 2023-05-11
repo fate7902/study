@@ -11,7 +11,7 @@ void Network::Initialize(Object* pl)
 		cout << "서버와 연결할 수 없습니다.\n";
 		while (true);
 	}
-	player = pl;
+	players = pl;
 	SendLogin();
 }
 
@@ -55,6 +55,8 @@ void Network::ProtocolProcessing(char* ptr)
 	case SC_LOGIN:
 	{
 		SC_LOGIN_PROTOCOL* p = reinterpret_cast<SC_LOGIN_PROTOCOL*>(ptr);
+		my_id = p->id;
+		player->id = p->id;
 		player->x = p->x;
 		player->y = p->y;
 		g_x = player->x - 4;
@@ -65,11 +67,34 @@ void Network::ProtocolProcessing(char* ptr)
 	case SC_TRANS:
 	{
 		SC_MOVE_PROTOCOL* p = reinterpret_cast<SC_MOVE_PROTOCOL*>(ptr);
-		player->x = p->x;
-		player->y = p->y;
-		g_x = player->x - 4;
-		g_y = player->y - 4;
-		player->move(player->x, player->y);
+		if (p->id == my_id) {
+			player->x = p->x;
+			player->y = p->y;
+			g_x = player->x - 4;
+			g_y = player->y - 4;
+			player->move(player->x, player->y);
+		}
+		else {
+			players[p->id].x = p->x;
+			players[p->id].y = p->y;
+			players[p->id].move(players[p->id].x, players[p->id].y);
+		}		
+		break;
+	}
+	case SC_ADD_OBJECT:
+	{
+		SC_ADD_OBJECT_PROTOCOL* p = reinterpret_cast<SC_ADD_OBJECT_PROTOCOL*>(ptr);
+		players[p->id].x = p->x;
+		players[p->id].y = p->y;
+		players[p->id].id - p->id;
+		players[p->id].move(players[p->id].x, players[p->id].y);
+		players[p->id].show();
+		break;
+	}
+	case SC_REMOVE_OBJECT:
+	{
+		SC_REMOVE_OBJECT_PROTOCOL* p = reinterpret_cast<SC_REMOVE_OBJECT_PROTOCOL*>(ptr);
+		players[p->id].hide();
 		break;
 	}
 	}

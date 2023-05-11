@@ -6,7 +6,11 @@ class Network
 private:
 	TcpSocket socket;
 	Socket::Status status;
+
+public:
 	Object* player;
+	Object* players;
+	int my_id;
 
 public:
 	Network() = default;
