@@ -27,7 +27,7 @@ struct SC_MOVE_PROTOCOL {
 	char type;
 	int id;
 	int x, y;
-	unsigned int client_time;
+	unsigned client_time;
 };
 
 struct SC_ADD_OBJECT_PROTOCOL {
@@ -54,6 +54,6 @@ struct CS_MOVE_PROTOCOL {
 	unsigned char size;
 	char type;
 	MOVE_TYPE move_type;
-	unsigned int client_time;
+	unsigned client_time;
 };
 #pragma pack(pop)

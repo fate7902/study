@@ -44,7 +44,7 @@ public:
 
     void send(void* protocol);
 	void send_login_info(CLIENT& cl);
-	void send_move_info(CLIENT& cl, int client_time);
+	void send_move_info(CLIENT& cl, unsigned client_time);
 	void send_add_object_info(CLIENT& cl);
 	void send_remove_object_info(CLIENT& cl);
 };

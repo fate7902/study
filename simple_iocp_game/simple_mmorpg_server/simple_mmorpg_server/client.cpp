@@ -122,15 +122,15 @@ void CLIENT::send_login_info(CLIENT& cl)
     send(&p);
 }
 
-void CLIENT::send_move_info(CLIENT& cl, int client_time)
+void CLIENT::send_move_info(CLIENT& cl, unsigned client_time)
 {
     SC_MOVE_PROTOCOL p;
     p.id = cl.GetID();
     p.x = position.load().first;
     p.y = position.load().second;
-    p.size = sizeof(SC_LOGIN_PROTOCOL);
+    p.size = sizeof(SC_MOVE_PROTOCOL);
     p.type = SC_TRANS;
-    p.client_time = client_time;
+    p.client_time = client_time;    
     send(&p);
 }
 

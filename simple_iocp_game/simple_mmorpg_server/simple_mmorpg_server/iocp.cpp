@@ -84,7 +84,8 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 			client_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 		}
 		else {
-			// 로그인 실패 관련 처리
+			// 로그인 실패 관련 처리			
+			client_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 		}
 		ZeroMemory(&ext_over->GetWSAOverlapped(), sizeof(ext_over->GetWSAOverlapped()));		
 		int addr_size = sizeof(SOCKADDR_IN);

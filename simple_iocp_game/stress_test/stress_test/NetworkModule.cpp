@@ -153,7 +153,7 @@ void ProcessPacket(int ci, unsigned char packet[])
 		break;
 	}	
 	default: MessageBox(hWnd, L"Unknown Packet Type", L"ERROR", 0);
-		while (true);
+		//while (true);
 	}
 }
 
