@@ -132,7 +132,7 @@ void IOCP::ProtocolProcessing(const int& client_id, char* protocol)
 	{
 		CS_LOGIN_PROTOCOL* p = reinterpret_cast<CS_LOGIN_PROTOCOL*>(protocol);
 		cout << "[" << p->name << "] 님이 접속하셨습니다.\n";
-		clients[client_id].SetPosition(0, 0);
+		clients[client_id].SetPosition(rand() % 2000, rand() % 2000);
 		clients[client_id].send_login_info(clients[client_id]);
 
 		// 로그인한 유저와 이미 접속중인 유저간의 거리측정을 통해
@@ -168,7 +168,7 @@ void IOCP::ProtocolProcessing(const int& client_id, char* protocol)
 			if (old_pos.second + 1 <= MAP_HEIGHT) clients[client_id].SetPosition(old_pos.first, old_pos.second + 1);
 			break;
 		}
-		clients[client_id].send_move_info(clients[client_id]);
+		clients[client_id].send_move_info(clients[client_id], p->client_time);
 
 		// 변화한 위치 값으로 인한 시야 범위 재측정
 		pair<int, int> pos = clients[client_id].GetPosition();

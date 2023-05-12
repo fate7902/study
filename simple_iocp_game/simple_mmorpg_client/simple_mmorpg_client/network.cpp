@@ -46,6 +46,7 @@ void Network::SendMove(const MOVE_TYPE& move_type)
 	p.size = sizeof(CS_MOVE_PROTOCOL);
 	p.type = CS_MOVE;
 	p.move_type = move_type;
+	p.client_time = 0;
 	SendProtocol(&p);
 }
 
