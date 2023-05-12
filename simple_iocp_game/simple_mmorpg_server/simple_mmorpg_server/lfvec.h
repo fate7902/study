@@ -12,6 +12,7 @@ public:
 	void emplace_back(int val);
 	void insert(int val);
 	void erase(int val);
+	void clear();
 	int empty();
 	bool exist(int val);
 };

@@ -38,6 +38,8 @@ public:
 
 	void SetSocket(SOCKET s);
 
+	void clear();
+
     void recv();
 
     void send(void* protocol);

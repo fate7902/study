@@ -30,6 +30,19 @@ int IOCP::GetClientID()
 	return ID_list.empty();
 }
 
+void IOCP::Disconnect(int id)
+{
+	for (int i = 0; i < MAX_USER; ++i) {
+		if (clients[i].GetUsing() == false) continue;
+		if (i == id) continue;
+		if (!clients[i].FindViewlist(id)) continue;
+		clients[i].RemoveViewlist(id);
+		clients[i].send_remove_object_info(clients[id]);
+	}
+	clients[id].clear();
+	ID_list.emplace_back(id);
+}
+
 void IOCP::worker()
 {
 	while (true) {
@@ -42,8 +55,8 @@ void IOCP::worker()
 			if (OVER_TYPE::ACCEPT == ext_over->GetOverType())
 				cout << "Accept Error\n";
 			else {
-				cout << "Logout on client[" << key << "]\n";
-				// 해당 key 유저 로그아웃 처리 필요
+				cout << "Logout on client[" << key << "]\n";				
+				Disconnect(key);
 				if (OVER_TYPE::SEND == ext_over->GetOverType()) delete ext_over;
 				continue;
 			}
@@ -81,7 +94,11 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 	case OVER_TYPE::RECV:
 	{
 		// 접속 종료 처리
-		if (0 == len) { }
+		if (0 == len) { 
+			cout << "Logout on client[" << key << "]\n";
+			Disconnect(key);
+			break;
+		}
 		int remain_data = len + clients[key].GetPrevRemain();
 		char* p = ext_over->GetSendBuf();
 		int protocol_size = p[0];
@@ -98,6 +115,12 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 		break;
 	}
 	case OVER_TYPE::SEND:
+		// 접속 종료 처리
+		if (0 == len) {
+			cout << "Logout on client[" << key << "]\n";
+			Disconnect(key);
+			break;
+		}
 		break;
 	}
 }

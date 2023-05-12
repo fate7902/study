@@ -61,6 +61,13 @@ void LFVEC::erase(int val)
 	use.store(false);
 }
 
+void LFVEC::clear()
+{
+	delete vec.load();
+	vec = new vector<int>();
+	use = false;
+}
+
 int LFVEC::empty()
 {
 	bool old_use = false;

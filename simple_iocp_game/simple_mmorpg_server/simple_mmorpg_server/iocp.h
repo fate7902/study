@@ -27,6 +27,7 @@ public:
 protected:
 	void Error_Display(const char* msg, int err_no);
 	int GetClientID();
+	void Disconnect(int id);
 
 	void worker();
 	void DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD& len);

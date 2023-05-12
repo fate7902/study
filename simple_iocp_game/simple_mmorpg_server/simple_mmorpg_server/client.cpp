@@ -85,6 +85,16 @@ void CLIENT::SetSocket(SOCKET s)
     socket = s;
 }
 
+void CLIENT::clear()
+{
+    position = { 0 , 0 };
+    ID = -1;
+    prev_remain = 0;
+    socket = NULL;
+    viewlist.clear();
+    use = false;
+}
+
 void CLIENT::recv()
 {
     DWORD recv_flag = 0;
