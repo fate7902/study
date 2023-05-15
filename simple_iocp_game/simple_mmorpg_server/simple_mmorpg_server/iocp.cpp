@@ -2,13 +2,15 @@
 #include "iocp.h"
 
 IOCP::IOCP()
-{
-	for (int i = 0; i < MAX_USER; ++i) ID_list.emplace_back(i);
+{	
+	ID_list = new LFVEC();
+	for (int i = 0; i < MAX_USER; ++i) ID_list->emplace_back(i);
 }
 
 IOCP::~IOCP()
 {
-
+	delete clients;
+	delete ID_list;
 }
 
 void IOCP::Error_Display(const char* msg, int err_no)
@@ -27,7 +29,7 @@ void IOCP::Error_Display(const char* msg, int err_no)
 
 int IOCP::GetClientID()
 {
-	return ID_list.empty();
+	return ID_list->empty();
 }
 
 void IOCP::Disconnect(int id)
@@ -40,29 +42,32 @@ void IOCP::Disconnect(int id)
 		clients[i].send_remove_object_info(clients[id]);
 	}
 	clients[id].clear();
-	ID_list.emplace_back(id);
+	ID_list->emplace_back(id);
 }
 
 void IOCP::worker()
-{
+{	
 	while (true) {
 		DWORD len;
 		ULONG_PTR key;
 		WSAOVERLAPPED* over = nullptr;
 		bool bret = GetQueuedCompletionStatus(handle_iocp, &len, &key, &over, INFINITE);
-		EXT_OVER* ext_over = reinterpret_cast<EXT_OVER*>(over);
+		EXT_OVER* ext_over = reinterpret_cast<EXT_OVER*>(over);		
 		if (bret == false) {
 			if (OVER_TYPE::ACCEPT == ext_over->GetOverType())
 				cout << "Accept Error\n";
 			else {
-				cout << "Logout on client[" << key << "]\n";				
-				Disconnect(key);
-				if (OVER_TYPE::SEND == ext_over->GetOverType()) delete ext_over;
+				cout << "Logout on client[" << key << "]\n";			
+				Disconnect(key);				
+				if (OVER_TYPE::SEND == ext_over->GetOverType()) {
+					delete ext_over->GetWsabuf().buf;
+					delete ext_over;
+				}
 				continue;
-			}
+			}			
 		}
-		DataProcessing(ext_over, key, len);
-	}
+		DataProcessing(ext_over, key, len);		
+	}	
 }
 
 void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD& len)
@@ -96,7 +101,7 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 	{
 		// 立加 辆丰 贸府
 		if (0 == len) { 
-			cout << "Logout on client[" << key << "]\n";
+			cout << "A Logout on client[" << key << "]\n";
 			Disconnect(key);
 			break;
 		}
@@ -118,10 +123,10 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 	case OVER_TYPE::SEND:
 		// 立加 辆丰 贸府
 		if (0 == len) {
-			cout << "Logout on client[" << key << "]\n";
+			cout << "B Logout on client[" << key << "]\n";
 			Disconnect(key);
-			break;
 		}
+		delete ext_over;
 		break;
 	}
 }
@@ -205,7 +210,7 @@ void IOCP::ProtocolProcessing(const int& client_id, char* protocol)
 void IOCP::Initialize(CLIENT* cl)
 {
 	clients = cl;
-
+	
 	WSADATA WASData;
 	ret = WSAStartup(MAKEWORD(2, 2), &WASData);
 	if (ret != 0) Error_Display("WSAStartup Error : ", WSAGetLastError());

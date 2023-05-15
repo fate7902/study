@@ -16,7 +16,7 @@ private:
 	EXT_OVER accept_over;
 
 	CLIENT* clients;
-	LFVEC ID_list;
+	LFVEC* ID_list;
 
 public:
 	IOCP();

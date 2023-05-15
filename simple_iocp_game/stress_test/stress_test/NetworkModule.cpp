@@ -322,7 +322,7 @@ void Test_Thread()
 {
 	while (true) {
 		Adjust_Number_Of_Client();
-
+		
 		for (int i = 0; i < num_connections; ++i) {
 			if (false == g_clients[i].connected) continue;
 			if (g_clients[i].last_move_time + 1s > high_resolution_clock::now()) continue;
@@ -339,6 +339,7 @@ void Test_Thread()
 			my_packet.client_time = static_cast<unsigned>(duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count());
 			SendPacket(i, &my_packet);
 		}
+		
 	}
 }
 

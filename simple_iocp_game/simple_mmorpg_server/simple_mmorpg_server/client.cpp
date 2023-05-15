@@ -5,14 +5,16 @@ CLIENT::CLIENT()
 {
     position = { 0 , 0 };
     use = false;
+    viewlist = new LFVEC();
 }
 
 CLIENT::~CLIENT()
 {
+    delete viewlist;
 }
 
 bool CLIENT::GetUsing()
-{
+{   
     return use.load();
 }
 
@@ -62,17 +64,20 @@ void CLIENT::SetID(int id)
 
 void CLIENT::AddViewlist(int id)
 {
-    viewlist.insert(id);
+    auto expected = true;
+    if (use.compare_exchange_weak(expected, true)) {
+        viewlist->emplace_back(id);
+    }
 }
 
 bool CLIENT::FindViewlist(int id)
 {
-    return viewlist.exist(id);
+    return viewlist->exist(id);
 }
 
 void CLIENT::RemoveViewlist(int id)
 {
-    viewlist.erase(id);
+    viewlist->erase(id);
 }
 
 void CLIENT::SetPrevRemain(int val)
@@ -91,7 +96,7 @@ void CLIENT::clear()
     ID = -1;
     prev_remain = 0;
     socket = NULL;
-    viewlist.clear();
+    viewlist->clear();
     use = false;
 }
 

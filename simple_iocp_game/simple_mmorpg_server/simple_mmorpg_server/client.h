@@ -9,7 +9,7 @@ private:
 	atomic<bool> use;
 
 	int ID;
-	LFVEC viewlist;
+	LFVEC* viewlist;
 
     int prev_remain;
     SOCKET socket;
