@@ -2,8 +2,9 @@
 #include "iocp.h"
 
 CLIENT clients[MAX_USER]{};
+MONSTER monsters[MAX_MONSTER]{};
 
 int main() {		
 	IOCP iocp;
-	iocp.Initialize(clients);
+	iocp.Initialize(clients, monsters);
 }

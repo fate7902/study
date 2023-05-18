@@ -11,6 +11,11 @@ LFVEC::~LFVEC()
 	delete vec.load();
 }
 
+atomic<vector<int>*> LFVEC::Getvec()
+{
+	return vec.load();
+}
+
 void LFVEC::emplace_back(int val)
 {
 	vector<int>* old_vec;

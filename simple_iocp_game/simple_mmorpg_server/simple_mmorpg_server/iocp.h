@@ -1,6 +1,7 @@
 #pragma once
 #include "ext_over.h"
 #include "client.h"
+#include "monster.h"
 #include "lfvec.h"
 
 constexpr int PORT_NUM = 4000;
@@ -16,15 +17,18 @@ private:
 	EXT_OVER accept_over;
 
 	CLIENT* clients;
+	MONSTER* monsters;
 	LFVEC* ID_list;
 
 public:
 	IOCP();
 	~IOCP();
 
-	void Initialize(CLIENT* cl);
+	void Initialize(CLIENT* cl, MONSTER* ms);
 
 protected:
+	void Monster_Initialize();
+
 	void Error_Display(const char* msg, int err_no);
 	int GetClientID();
 	void Disconnect(int id);

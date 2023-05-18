@@ -10,6 +10,7 @@ CLIENT::CLIENT()
 
 CLIENT::~CLIENT()
 {
+    delete viewlist->Getvec();
     delete viewlist;
 }
 

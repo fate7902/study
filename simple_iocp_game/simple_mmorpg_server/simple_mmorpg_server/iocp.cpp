@@ -207,9 +207,11 @@ void IOCP::ProtocolProcessing(const int& client_id, char* protocol)
 	}
 }
 
-void IOCP::Initialize(CLIENT* cl)
+void IOCP::Initialize(CLIENT* cl, MONSTER* ms)
 {
 	clients = cl;
+	monsters = ms;
+	Monster_Initialize();
 	
 	WSADATA WASData;
 	ret = WSAStartup(MAKEWORD(2, 2), &WASData);
@@ -243,4 +245,60 @@ void IOCP::Initialize(CLIENT* cl)
 
 	closesocket(server_socket);
 	WSACleanup();
+}
+
+void IOCP::Monster_Initialize()
+{
+	cout << "Monster intialization begin.\n";
+	for (int i = MAX_USER; i < MAX_USER + MAX_MONSTER; ++i) {
+		monsters[i].SetID(i);
+		monsters[i].SetPosition(rand() % 2000, rand() % 2000);
+		lua_State* L = luaL_newstate();
+		monsters[i].SetLua(L);
+
+		luaL_openlibs(L);
+		luaL_dofile(L, "monsterAI.lua");
+
+		// monster 테이블 가져오기
+		lua_getglobal(L, "monster");
+
+		// x와 y 값 가져오기
+		lua_getfield(L, -1, "x");
+		lua_getfield(L, -2, "y");
+
+		// 가져온 값 확인
+		int x = lua_tointeger(L, -2);
+		int y = lua_tointeger(L, -1);
+		lua_pop(L, 2); // 스택에서 값을 제거합니다.
+		cout << x << ", " << y << "\n";
+
+		// 변경한 값 스택에 쌓기
+		auto pos = monsters[i].GetPosition();
+		lua_pushnumber(L, pos.first);
+		lua_setfield(L, -2, "x");
+		lua_pushnumber(L, pos.second);
+		lua_setfield(L, -2, "y");
+		
+		// 변경된 값 확인
+		lua_getfield(L, -1, "x");
+		lua_getfield(L, -2, "y");		
+		x = lua_tointeger(L, -2);
+		y = lua_tointeger(L, -1);
+		lua_pop(L, 2); // 스택에서 값을 제거합니다.
+		cout << x << ", " << y << "\n";
+
+		//luaL_dostring(L, "set_position({x, y})");
+
+		//setMonsterPosition(L, 10, 20);
+	}
+	cout << "NPC initialization complete\n";
+}
+
+void setMonsterPosition(lua_State* L, int x, int y) {
+	// monster 테이블에 x와 y 값을 설정하는 move 함수 호출
+	lua_getglobal(L, "move");
+	lua_pushvalue(L, -2); // monster 테이블 복사
+	lua_pushinteger(L, x);
+	lua_pushinteger(L, y);
+	lua_pcall(L, 3, 0, 0);
 }

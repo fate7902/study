@@ -6,12 +6,19 @@
 #include <thread>
 #include "protocol.h"
 
+extern "C" {
+#include "include/lua.h"
+#include "include/lauxlib.h"
+#include "include/lualib.h"
+}
+#pragma comment (lib, "lua54.lib")
 #pragma comment(lib, "WS2_32.lib")
 #pragma comment(lib, "MSWSock.lib")
 
 using namespace std;
 
 constexpr int MAX_USER = 5000;
+constexpr int MAX_MONSTER = 1;
 constexpr int MAP_WIDTH = 2000;
 constexpr int MAP_HEIGHT = 2000;
 
