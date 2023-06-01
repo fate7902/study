@@ -63,3 +63,8 @@ void MONSTER::SetLua(lua_State* l)
 {
 	L = l;
 }
+
+lua_State* MONSTER::GetLua()
+{
+	return L;
+}

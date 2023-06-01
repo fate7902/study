@@ -10,7 +10,7 @@ private:
 	WSABUF wsabuf;
 	char send_buf[BUF_SIZE];
 	OVER_TYPE over_type;
-	
+	int id;
 public:
 	EXT_OVER();
 	EXT_OVER(char* protocol);
@@ -22,4 +22,6 @@ public:
 
 	OVER_TYPE GetOverType();
 	void SetOverType(OVER_TYPE over_type);
+
+	void SetID(int new_id);
 };

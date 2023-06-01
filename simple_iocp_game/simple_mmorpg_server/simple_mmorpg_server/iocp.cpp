@@ -121,6 +121,7 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 		break;
 	}
 	case OVER_TYPE::SEND:
+	{
 		// 접속 종료 처리
 		if (0 == len) {
 			cout << "B Logout on client[" << key << "]\n";
@@ -128,6 +129,32 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 		}
 		delete ext_over;
 		break;
+	}
+	case OVER_TYPE::MONSTER_MOVE:
+	{
+		auto L = monsters[key].GetLua();
+		lua_getglobal(L, "TESTmove");
+		lua_pcall(L, 0, 0, 0);
+		lua_getglobal(L, "x");
+		lua_getglobal(L, "y");
+		int x = lua_tointeger(L, -2);
+		int y = lua_tointeger(L, -1);
+		lua_pop(L, 2);
+		monsters[key].SetPosition(x, y);
+		auto p = monsters[key].GetPosition();
+		cout << p.first << ", " << p.second << "\n";
+
+		TIMER_EVENT k;
+		k.ev = EVENT_TYPE::EV_MOVE;
+		k.monster_id = key;
+		k.act_time = system_clock::now() + 1000ms;
+		timer_l.lock();
+		timer_queue.push(k);
+		timer_l.unlock();
+
+		delete ext_over;
+		break;
+	}
 	}
 }
 
@@ -239,12 +266,63 @@ void IOCP::Initialize(CLIENT* cl, MONSTER* ms)
 	
 	vector<thread> worker_threads;
 	for (int i = 0; i < THREADS_NUM; ++i)
-		worker_threads.emplace_back(&IOCP::worker, this);	
+		worker_threads.emplace_back(&IOCP::worker, this);
+	thread monster_thread{ &IOCP::Monster_Thread, this };
+	monster_thread.join();
+	thread timer_thread{ &IOCP::do_timer, this };
+	timer_thread.join();
 	for (auto& th : worker_threads)
 		th.join();
 
 	closesocket(server_socket);
 	WSACleanup();
+}
+
+void IOCP::Monster_Thread() {
+	for (int i = MAX_USER; i < MAX_USER + MAX_MONSTER; ++i) {		
+		TIMER_EVENT k;
+		k.ev = EVENT_TYPE::EV_MOVE;
+		k.monster_id = i;
+		k.act_time = system_clock::now() + 1000ms;
+		timer_queue.emplace(k);
+	}
+}
+
+void IOCP::process_event(TIMER_EVENT k)
+{
+	switch (k.ev) {
+	case EVENT_TYPE::EV_MOVE:
+	{
+		auto ext_over = new EXT_OVER;
+		ext_over->SetOverType(OVER_TYPE::MONSTER_MOVE);
+		ext_over->SetID(k.monster_id);
+		PostQueuedCompletionStatus(handle_iocp, 1, k.monster_id, &ext_over->GetWSAOverlapped());
+		break;
+	}
+	}
+}
+
+void IOCP::do_timer()
+{
+	do {
+		do {
+			TIMER_EVENT k;
+			lock_guard<mutex> lock(timer_l);
+			if (!timer_queue.empty()) {
+				k = timer_queue.top();
+				if (k.act_time > chrono::system_clock::now()) {
+					this_thread::sleep_for(10ms);
+					break;
+				}
+				timer_queue.pop();
+				process_event(k);
+			}
+			else {
+				this_thread::sleep_for(10ms);
+				break;
+			}
+		} while (true);
+	} while (true);
 }
 
 void IOCP::Monster_Initialize()
@@ -257,48 +335,30 @@ void IOCP::Monster_Initialize()
 		monsters[i].SetLua(L);
 
 		luaL_openlibs(L);
-		luaL_dofile(L, "monsterAI.lua");
-
-		// monster 테이블 가져오기
-		lua_getglobal(L, "monster");
-
-		// x와 y 값 가져오기
-		lua_getfield(L, -1, "x");
-		lua_getfield(L, -2, "y");
-
-		// 가져온 값 확인
-		int x = lua_tointeger(L, -2);
-		int y = lua_tointeger(L, -1);
-		lua_pop(L, 2); // 스택에서 값을 제거합니다.
-		cout << x << ", " << y << "\n";
-
-		// 변경한 값 스택에 쌓기
-		auto pos = monsters[i].GetPosition();
-		lua_pushnumber(L, pos.first);
-		lua_setfield(L, -2, "x");
-		lua_pushnumber(L, pos.second);
-		lua_setfield(L, -2, "y");
-		
-		// 변경된 값 확인
-		lua_getfield(L, -1, "x");
-		lua_getfield(L, -2, "y");		
-		x = lua_tointeger(L, -2);
-		y = lua_tointeger(L, -1);
-		lua_pop(L, 2); // 스택에서 값을 제거합니다.
-		cout << x << ", " << y << "\n";
-
-		//luaL_dostring(L, "set_position({x, y})");
-
-		//setMonsterPosition(L, 10, 20);
+		if (luaL_dofile(L, "monsterAI.lua") != LUA_OK) {
+			printf("Failed to load Lua script: %s\n", lua_tostring(L, -1));
+			lua_close(L);
+		}
+		else {			
+			lua_getglobal(L, "SetPosition");
+			auto pos = monsters[i].GetPosition();
+			cout << pos.first << ", " << pos.second << "\n";
+			lua_pushnumber(L, pos.first);
+			lua_pushnumber(L, pos.second);
+			if (lua_pcall(L, 2, 0, 0) != LUA_OK) {
+				std::cerr << "Failed to call SetPosition: " << lua_tostring(L, -1) << std::endl;
+				lua_close(L);				
+			}
+			else {
+				lua_getglobal(L, "monster");
+				lua_getfield(L, -1, "x");
+				lua_getfield(L, -2, "y");
+				int x = lua_tointeger(L, -2);
+				int y = lua_tointeger(L, -1);
+				lua_pop(L, 2);
+				cout << x << ", " << y << "\n";
+			}
+		}
 	}
 	cout << "NPC initialization complete\n";
-}
-
-void setMonsterPosition(lua_State* L, int x, int y) {
-	// monster 테이블에 x와 y 값을 설정하는 move 함수 호출
-	lua_getglobal(L, "move");
-	lua_pushvalue(L, -2); // monster 테이블 복사
-	lua_pushinteger(L, x);
-	lua_pushinteger(L, y);
-	lua_pcall(L, 3, 0, 0);
 }

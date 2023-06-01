@@ -47,3 +47,8 @@ void EXT_OVER::SetOverType(OVER_TYPE type)
 {
 	over_type = type;
 }
+
+void EXT_OVER::SetID(int new_id)
+{
+	id = new_id;
+}

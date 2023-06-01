@@ -25,4 +25,5 @@ public:
 	void RemoveViewlist(int id);
 
 	void SetLua(lua_State* l);
+	lua_State* GetLua();
 };
