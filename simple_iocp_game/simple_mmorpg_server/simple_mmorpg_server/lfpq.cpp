@@ -59,26 +59,35 @@ void LFPQ::emplace(const TIMER_EVENT& value) {
 
 bool LFPQ::pop(TIMER_EVENT& value)
 {
-    Node* currentHead = head.load(memory_order_acquire);
+    Node* currentHead = nullptr;
+    Node* newHead = nullptr;
 
-    while (currentHead != nullptr) {
+    while (true) {
+        currentHead = head.load(std::memory_order_acquire);
+        if (currentHead == nullptr) {
+            return false;  // 큐가 비어있음
+        }
+
         if (currentHead->value.act_time < system_clock::now()) {
-            Node* newHead = currentHead->next.load(memory_order_relaxed);
+            newHead = currentHead->next.load(std::memory_order_relaxed);
 
-            if (head.compare_exchange_weak(currentHead, newHead, memory_order_release)) {
+            if (head.compare_exchange_weak(currentHead, newHead, std::memory_order_release)) {
                 value = currentHead->value;
-                delete currentHead;
-                return true;  // 조건에 맞는 값 제거 성공
+                try {
+                    delete currentHead;
+                }
+                catch (...){
+                    // 예외 처리
+                    cout << "delete 예외 발생\n";
+                    return false;
+                }                
+                return true;
             }
-
-            currentHead = head.load(memory_order_acquire);
         }
         else {
-            break;
+            return false;
         }
     }
-
-    return false;  // 큐가 비어있거나 조건에 맞는 값이 없음
 }
 
 bool LFPQ::top(TIMER_EVENT& value)

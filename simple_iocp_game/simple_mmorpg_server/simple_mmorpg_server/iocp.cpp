@@ -132,7 +132,12 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 	}
 	case OVER_TYPE::MONSTER_MOVE:
 	{
-		auto L = monsters[key].GetLua();
+		//lock_guard<mutex> lock(monsters[key].mutex);
+		if (key < MAX_USER) {
+			delete ext_over;
+			break;
+		}
+		auto L = monsters[key - MAX_USER].GetLua();
 		lua_getglobal(L, "TESTmove");
 		lua_pcall(L, 0, 0, 0);
 		lua_getglobal(L, "monster");
@@ -141,9 +146,10 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 		int x = lua_tointeger(L, -2);
 		int y = lua_tointeger(L, -1);
 		lua_pop(L, 2);
-		monsters[key].SetPosition(x, y);
-		auto p = monsters[key].GetPosition();
-		//cout << p.first << ", " << p.second << "\n";
+		monsters[key - MAX_USER].SetPosition(x, y);
+		auto p = monsters[key - MAX_USER].GetPosition();
+		if(key - MAX_USER == 0)
+			cout << p.first << ", " << p.second << "\n";
 
 		TIMER_EVENT k;
 		k.ev = EVENT_TYPE::EV_MOVE;
@@ -268,8 +274,11 @@ void IOCP::Initialize(CLIENT* cl, MONSTER* ms)
 		worker_threads.emplace_back(&IOCP::worker, this);
 	thread monster_thread{ &IOCP::Monster_Thread, this };
 	monster_thread.join();
-	thread timer_thread{ &IOCP::do_timer, this };
-	timer_thread.join();
+	vector<thread> timer_threads;
+	for (int i = 0; i < 1; ++i)
+		timer_threads.emplace_back(&IOCP::do_timer, this);
+	for (auto& th : timer_threads)
+		th.join();
 	for (auto& th : worker_threads)
 		th.join();
 
@@ -307,7 +316,7 @@ void IOCP::do_timer()
 		TIMER_EVENT k;
 
 		if (timer_queue.pop(k)) {
-			process_event(k);
+			process_event(k);			
 		}
 		else {
 			this_thread::sleep_for(10ms);
@@ -319,10 +328,10 @@ void IOCP::Monster_Initialize()
 {
 	cout << "Monster intialization begin.\n";
 	for (int i = MAX_USER; i < MAX_USER + MAX_MONSTER; ++i) {
-		monsters[i].SetID(i);
-		monsters[i].SetPosition(rand() % 2000, rand() % 2000);
+		monsters[i - MAX_USER].SetID(i);
+		monsters[i - MAX_USER].SetPosition(rand() % 2000, rand() % 2000);
 		lua_State* L = luaL_newstate();
-		monsters[i].SetLua(L);
+		monsters[i - MAX_USER].SetLua(L);
 
 		luaL_openlibs(L);
 		if (luaL_dofile(L, "monsterAI.lua") != LUA_OK) {
@@ -331,7 +340,7 @@ void IOCP::Monster_Initialize()
 		}
 		else {			
 			lua_getglobal(L, "SetPosition");
-			auto pos = monsters[i].GetPosition();
+			auto pos = monsters[i - MAX_USER].GetPosition();
 			//cout << pos.first << ", " << pos.second << "\n";
 			lua_pushnumber(L, pos.first);
 			lua_pushnumber(L, pos.second);

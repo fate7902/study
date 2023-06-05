@@ -10,6 +10,9 @@ private:
 	lua_State* L;
 
 public:
+	mutex mutex;
+
+public:
 	MONSTER();
 	~MONSTER();
 
