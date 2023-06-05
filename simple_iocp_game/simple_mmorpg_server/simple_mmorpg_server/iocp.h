@@ -3,22 +3,10 @@
 #include "client.h"
 #include "monster.h"
 #include "lfvec.h"
+#include "lfpq.h"
 
 constexpr int PORT_NUM = 4000;
 constexpr int THREADS_NUM = 12;
-
-struct TIMER_EVENT {
-	int monster_id;
-	EVENT_TYPE ev;
-	system_clock::time_point act_time;
-	int target_id;
-
-	constexpr bool operator < (const TIMER_EVENT& _Left) const
-	{
-		return (act_time > _Left.act_time);
-	}
-
-};
 
 class IOCP
 {
@@ -33,8 +21,7 @@ private:
 	MONSTER* monsters;
 	LFVEC* ID_list;	
 
-	priority_queue<TIMER_EVENT> timer_queue;
-	mutex timer_l;
+	LFPQ timer_queue;
 
 public:
 	IOCP();

@@ -135,22 +135,21 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 		auto L = monsters[key].GetLua();
 		lua_getglobal(L, "TESTmove");
 		lua_pcall(L, 0, 0, 0);
-		lua_getglobal(L, "x");
-		lua_getglobal(L, "y");
+		lua_getglobal(L, "monster");
+		lua_getfield(L, -1, "x");
+		lua_getfield(L, -2, "y");
 		int x = lua_tointeger(L, -2);
 		int y = lua_tointeger(L, -1);
 		lua_pop(L, 2);
 		monsters[key].SetPosition(x, y);
 		auto p = monsters[key].GetPosition();
-		cout << p.first << ", " << p.second << "\n";
+		//cout << p.first << ", " << p.second << "\n";
 
 		TIMER_EVENT k;
 		k.ev = EVENT_TYPE::EV_MOVE;
 		k.monster_id = key;
-		k.act_time = system_clock::now() + 1000ms;
-		timer_l.lock();
-		timer_queue.push(k);
-		timer_l.unlock();
+		k.act_time = system_clock::now() + 1000ms;		
+		timer_queue.emplace(k);		
 
 		delete ext_over;
 		break;
@@ -304,25 +303,16 @@ void IOCP::process_event(TIMER_EVENT k)
 
 void IOCP::do_timer()
 {
-	do {
-		do {
-			TIMER_EVENT k;
-			lock_guard<mutex> lock(timer_l);
-			if (!timer_queue.empty()) {
-				k = timer_queue.top();
-				if (k.act_time > chrono::system_clock::now()) {
-					this_thread::sleep_for(10ms);
-					break;
-				}
-				timer_queue.pop();
-				process_event(k);
-			}
-			else {
-				this_thread::sleep_for(10ms);
-				break;
-			}
-		} while (true);
-	} while (true);
+	while (true) {
+		TIMER_EVENT k;
+
+		if (timer_queue.pop(k)) {
+			process_event(k);
+		}
+		else {
+			this_thread::sleep_for(10ms);
+		}
+	}
 }
 
 void IOCP::Monster_Initialize()
@@ -342,7 +332,7 @@ void IOCP::Monster_Initialize()
 		else {			
 			lua_getglobal(L, "SetPosition");
 			auto pos = monsters[i].GetPosition();
-			cout << pos.first << ", " << pos.second << "\n";
+			//cout << pos.first << ", " << pos.second << "\n";
 			lua_pushnumber(L, pos.first);
 			lua_pushnumber(L, pos.second);
 			if (lua_pcall(L, 2, 0, 0) != LUA_OK) {
@@ -356,7 +346,7 @@ void IOCP::Monster_Initialize()
 				int x = lua_tointeger(L, -2);
 				int y = lua_tointeger(L, -1);
 				lua_pop(L, 2);
-				cout << x << ", " << y << "\n";
+				//cout << x << ", " << y << "\n";
 			}
 		}
 	}

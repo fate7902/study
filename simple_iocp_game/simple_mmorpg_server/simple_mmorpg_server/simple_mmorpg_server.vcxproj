@@ -162,6 +162,7 @@
     <ClCompile Include="client.cpp" />
     <ClCompile Include="ext_over.cpp" />
     <ClCompile Include="iocp.cpp" />
+    <ClCompile Include="lfpq.cpp" />
     <ClCompile Include="lfvec.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="monster.cpp" />
@@ -175,6 +176,7 @@
     <ClInclude Include="include\luaconf.h" />
     <ClInclude Include="include\lualib.h" />
     <ClInclude Include="iocp.h" />
+    <ClInclude Include="lfpq.h" />
     <ClInclude Include="lfvec.h" />
     <ClInclude Include="monster.h" />
     <ClInclude Include="protocol.h" />
