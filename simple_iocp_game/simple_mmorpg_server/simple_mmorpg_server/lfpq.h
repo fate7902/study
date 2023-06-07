@@ -4,12 +4,6 @@ struct TIMER_EVENT {
 	EVENT_TYPE ev;
 	system_clock::time_point act_time;
 	int target_id;
-	/*
-	constexpr bool operator < (const TIMER_EVENT& _Left) const
-	{
-		return (act_time > _Left.act_time);
-	}
-	*/
 };
 
 class LFPQ
@@ -17,9 +11,9 @@ class LFPQ
 private:
 	struct Node {
 		TIMER_EVENT value;
-		atomic<Node*> next;		
+		atomic<Node*> next;
 
-		Node(const TIMER_EVENT& val) : value(val), next(nullptr) {}
+		//Node(const TIMER_EVENT& val) : value(val), next(nullptr) {}
 	};
 
 	atomic<Node*> head;

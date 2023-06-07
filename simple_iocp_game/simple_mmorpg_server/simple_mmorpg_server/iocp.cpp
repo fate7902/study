@@ -148,8 +148,8 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 		lua_pop(L, 2);
 		monsters[key - MAX_USER].SetPosition(x, y);
 		auto p = monsters[key - MAX_USER].GetPosition();
-		if(key - MAX_USER == 0)
-			cout << p.first << ", " << p.second << "\n";
+		//if(key - MAX_USER == 0)
+			//cout << p.first << ", " << p.second << "\n";
 
 		TIMER_EVENT k;
 		k.ev = EVENT_TYPE::EV_MOVE;
@@ -275,7 +275,7 @@ void IOCP::Initialize(CLIENT* cl, MONSTER* ms)
 	thread monster_thread{ &IOCP::Monster_Thread, this };
 	monster_thread.join();
 	vector<thread> timer_threads;
-	for (int i = 0; i < 1; ++i)
+	for (int i = 0; i < 8; ++i)
 		timer_threads.emplace_back(&IOCP::do_timer, this);
 	for (auto& th : timer_threads)
 		th.join();
@@ -294,6 +294,7 @@ void IOCP::Monster_Thread() {
 		k.act_time = system_clock::now() + 1000ms;
 		timer_queue.emplace(k);
 	}
+	cout << "NPC initialization complete\n";
 }
 
 void IOCP::process_event(TIMER_EVENT k)
@@ -313,13 +314,15 @@ void IOCP::process_event(TIMER_EVENT k)
 void IOCP::do_timer()
 {
 	while (true) {
-		TIMER_EVENT k;
+		while (true) {
+			TIMER_EVENT k;
 
-		if (timer_queue.pop(k)) {
-			process_event(k);			
-		}
-		else {
-			this_thread::sleep_for(10ms);
+			if (timer_queue.pop(k)) {
+				process_event(k);
+			}
+			else {
+				this_thread::sleep_for(10ms);
+			}
 		}
 	}
 }
@@ -358,6 +361,5 @@ void IOCP::Monster_Initialize()
 				//cout << x << ", " << y << "\n";
 			}
 		}
-	}
-	cout << "NPC initialization complete\n";
+	}	
 }
