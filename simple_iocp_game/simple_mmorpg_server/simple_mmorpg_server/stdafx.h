@@ -21,7 +21,7 @@ using namespace std;
 using namespace chrono;
 
 constexpr int MAX_USER = 5000;
-constexpr int MAX_MONSTER = 100;
+constexpr int MAX_MONSTER = 200000;
 constexpr int MAP_WIDTH = 2000;
 constexpr int MAP_HEIGHT = 2000;
 

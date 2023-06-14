@@ -44,6 +44,19 @@ void MONSTER::SetID(int id)
 	ID = id;
 }
 
+int MONSTER::GetState()
+{
+	return state.load();
+}
+
+void MONSTER::SetState(bool new_state)
+{
+	bool old_state = state.load();
+	while (!state.compare_exchange_strong(old_state, new_state)) {
+		old_state = state.load();
+	}
+}
+
 void MONSTER::AddViewlist(int id)
 {
 	viewlist->emplace_back(id);
@@ -57,6 +70,13 @@ bool MONSTER::FindViewlist(int id)
 void MONSTER::RemoveViewlist(int id)
 {
 	viewlist->erase(id);
+}
+
+int MONSTER::EmptyViewlist()
+{
+	vector<int>* old_vec = viewlist->Getvec();
+	if (old_vec == nullptr || old_vec->empty()) return 0;
+	return 1;	
 }
 
 void MONSTER::SetLua(lua_State* l)

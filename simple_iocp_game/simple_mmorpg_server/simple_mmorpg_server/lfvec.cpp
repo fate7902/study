@@ -13,7 +13,10 @@ LFVEC::~LFVEC()
 
 atomic<vector<int>*> LFVEC::Getvec()
 {
-	return vec.load();
+	while (true) {
+		if (vec == nullptr) continue;
+		return vec.load();
+	}
 }
 
 void LFVEC::emplace_back(int val)

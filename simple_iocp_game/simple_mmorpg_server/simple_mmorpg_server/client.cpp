@@ -151,10 +151,31 @@ void CLIENT::send_add_object_info(CLIENT& cl)
     send(&p);
 }
 
+
+void CLIENT::send_add_object_info(MONSTER& mo)
+{
+    SC_ADD_OBJECT_PROTOCOL p;
+    p.id = mo.GetID();
+    p.x = mo.GetPosition().first;
+    p.y = mo.GetPosition().second;
+    p.size = sizeof(SC_ADD_OBJECT_PROTOCOL);
+    p.type = SC_ADD_OBJECT;
+    send(&p);
+}
+
 void CLIENT::send_remove_object_info(CLIENT& cl)
 {
     SC_REMOVE_OBJECT_PROTOCOL p;
     p.id = cl.GetID();
+    p.size = sizeof(SC_REMOVE_OBJECT_PROTOCOL);
+    p.type = SC_REMOVE_OBJECT;
+    send(&p);
+}
+
+void CLIENT::send_remove_object_info(MONSTER& mo)
+{
+    SC_REMOVE_OBJECT_PROTOCOL p;
+    p.id = mo.GetID();
     p.size = sizeof(SC_REMOVE_OBJECT_PROTOCOL);
     p.type = SC_REMOVE_OBJECT;
     send(&p);

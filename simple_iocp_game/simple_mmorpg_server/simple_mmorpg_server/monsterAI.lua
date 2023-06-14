@@ -1,11 +1,16 @@
 monster = {
 x = 0,
 y = 0,
+state = false;
 }
 
 function SetPosition(new_x, new_y)
 	monster.x = new_x
     monster.y = new_y
+end
+
+function SetState(new_state)
+	monster.state = new_state    
 end
 
 function TESTmove()

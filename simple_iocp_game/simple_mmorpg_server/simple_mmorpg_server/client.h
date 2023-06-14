@@ -1,6 +1,7 @@
 #pragma once
 #include "ext_over.h"
 #include "lfvec.h"
+#include "monster.h"
 
 class CLIENT
 {
@@ -46,5 +47,7 @@ public:
 	void send_login_info(CLIENT& cl);
 	void send_move_info(CLIENT& cl, unsigned client_time);
 	void send_add_object_info(CLIENT& cl);
+	void send_add_object_info(MONSTER& mo);
 	void send_remove_object_info(CLIENT& cl);
+	void send_remove_object_info(MONSTER& mo);
 };

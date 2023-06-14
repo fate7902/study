@@ -131,31 +131,70 @@ void IOCP::DataProcessing(EXT_OVER*& ext_over, const ULONG_PTR& key, const DWORD
 		break;
 	}
 	case OVER_TYPE::MONSTER_MOVE:
-	{
-		//lock_guard<mutex> lock(monsters[key].mutex);
+	{		
 		if (key < MAX_USER) {
 			delete ext_over;
 			break;
 		}
 		auto L = monsters[key - MAX_USER].GetLua();
+		monsters[key - MAX_USER].mutex.lock();
 		lua_getglobal(L, "TESTmove");
 		lua_pcall(L, 0, 0, 0);
 		lua_getglobal(L, "monster");
 		lua_getfield(L, -1, "x");
 		lua_getfield(L, -2, "y");
-		int x = lua_tointeger(L, -2);
-		int y = lua_tointeger(L, -1);
-		lua_pop(L, 2);
+		lua_getfield(L, -3, "state");
+		int x = lua_tointeger(L, -3);
+		int y = lua_tointeger(L, -2);
+		bool state = lua_toboolean(L, -1);
+		lua_pop(L, 3);
+		monsters[key - MAX_USER].mutex.unlock();
 		monsters[key - MAX_USER].SetPosition(x, y);
-		auto p = monsters[key - MAX_USER].GetPosition();
 		//if(key - MAX_USER == 0)
 			//cout << p.first << ", " << p.second << "\n";
+				
+		// 시야에 들어오는 유저 있는지 확인		
+		auto pos = monsters[key - MAX_USER].GetPosition();
+		for (int i = 0; i < MAX_USER; ++i) {
+			if (monsters[key - MAX_USER].FindViewlist(i)) continue;
+			if (monsters[key - MAX_USER].CalcDistance(pos, clients[i].GetPosition())) {
+				clients[i].AddViewlist(key - MAX_USER);
+				monsters[key - MAX_USER].AddViewlist(i);
+				// 서로에게 해당 정보 전송
+				clients[i].send_remove_object_info(monsters[key - MAX_USER]);
+			}
+		}
 
-		TIMER_EVENT k;
-		k.ev = EVENT_TYPE::EV_MOVE;
-		k.monster_id = key;
-		k.act_time = system_clock::now() + 1000ms;		
-		timer_queue.emplace(k);		
+		// 시야에서 벗어나는 유저 있는지 확인
+		for (int i = 0; i < MAX_USER; ++i) {
+			if (!monsters[key - MAX_USER].FindViewlist(i)) continue;
+			if (!monsters[key - MAX_USER].CalcDistance(pos, clients[i].GetPosition())) {
+				clients[i].RemoveViewlist(key - MAX_USER);
+				monsters[key - MAX_USER].RemoveViewlist(i);
+				if (monsters[key - MAX_USER].EmptyViewlist() == 0) {
+					auto L = monsters[key - MAX_USER].GetLua();
+					monsters[key - MAX_USER].mutex.lock();
+					lua_getglobal(L, "SetState");
+					monsters[key - MAX_USER].SetState(false);
+					lua_pushboolean(L, false);
+					if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
+						std::cerr << "Failed to call SetPosition: " << lua_tostring(L, -1) << std::endl;
+						lua_close(L);
+					}
+					monsters[key - MAX_USER].mutex.unlock();
+				}
+				// 서로에게 해당 정보 전송
+				clients[i].send_remove_object_info(monsters[key - MAX_USER]);
+			}
+		}		
+
+		if (state) {
+			TIMER_EVENT k;
+			k.ev = EVENT_TYPE::EV_MOVE;
+			k.monster_id = key;
+			k.act_time = system_clock::now() + 1000ms;
+			timer_queue.emplace(k);
+		}
 
 		delete ext_over;
 		break;
@@ -186,6 +225,35 @@ void IOCP::ProtocolProcessing(const int& client_id, char* protocol)
 			clients[client_id].send_add_object_info(clients[i]);
 			clients[i].send_add_object_info(clients[client_id]);
 		}
+
+		// 로그인한 유저와 몬스터들과의 거리측정을 통해 몬스터의 이동과 유저한테 보이게 표시
+		for (int i = 0; i < MAX_MONSTER; ++i) {			
+			if (!clients[client_id].CalcDistance(pos, monsters[i].GetPosition())) continue;			
+			clients[client_id].AddViewlist(i + MAX_USER);
+			monsters[i].AddViewlist(client_id);
+			if (!monsters[i].GetState()) {				
+				auto L = monsters[i].GetLua();
+				monsters[i].mutex.lock();
+				lua_getglobal(L, "SetState");
+				monsters[i].SetState(true);
+				lua_pushboolean(L, true);
+				if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
+					monsters[i].mutex.unlock();
+					std::cerr << "Failed to call SetPosition: " << lua_tostring(L, -1) << std::endl;
+					lua_close(L);
+				}
+				else {
+					monsters[i].mutex.unlock();
+					TIMER_EVENT k;
+					k.ev = EVENT_TYPE::EV_MOVE;
+					k.monster_id = monsters[i].GetID();
+					k.act_time = system_clock::now() + 1000ms;
+					timer_queue.emplace(k);
+				}				
+			}
+			// 해당 정보 전송
+			clients[client_id].send_add_object_info(monsters[i]);
+		}
 		break;
 	}
 	case CS_MOVE:
@@ -210,7 +278,7 @@ void IOCP::ProtocolProcessing(const int& client_id, char* protocol)
 
 		// 변화한 위치 값으로 인한 시야 범위 재측정
 		pair<int, int> pos = clients[client_id].GetPosition();
-		// 새로 시야에 들어오는 지 확인
+		// 새로 시야에 들어오는 유저 있는지 확인
 		for (int i = 0; i < MAX_USER; ++i) {
 			if (clients[i].GetUsing() == false) continue;
 			if (i == client_id) continue;
@@ -221,7 +289,36 @@ void IOCP::ProtocolProcessing(const int& client_id, char* protocol)
 			clients[client_id].send_add_object_info(clients[i]);
 			clients[i].send_add_object_info(clients[client_id]);
 		}
-		// 시야에서 벗어나는 지 확인
+		// 새로 시야에 들어오는 몬스터 있는지 확인
+		for (int i = 0; i < MAX_MONSTER; ++i) {
+			if (!clients[client_id].CalcDistance(pos, monsters[i].GetPosition())) continue;
+			clients[client_id].AddViewlist(i + MAX_USER);
+			monsters[i].AddViewlist(client_id);
+			if (!monsters[i].GetState()) {				
+				auto L = monsters[i].GetLua();
+				monsters[i].mutex.lock();
+				lua_getglobal(L, "SetState");
+				monsters[i].SetState(true);
+				lua_pushboolean(L, true);
+				if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
+					monsters[i].mutex.unlock();
+					std::cerr << "Failed to call SetPosition: " << lua_tostring(L, -1) << std::endl;
+					lua_close(L);
+				}
+				else {
+					monsters[i].mutex.unlock();
+					TIMER_EVENT k;
+					k.ev = EVENT_TYPE::EV_MOVE;
+					k.monster_id = monsters[i].GetID();
+					k.act_time = system_clock::now() + 1000ms;
+					timer_queue.emplace(k);
+				}
+			}
+			// 해당 정보 전송
+			clients[client_id].send_add_object_info(monsters[i]);
+		}
+
+		// 시야에서 벗어나는 유저 있는지 확인
 		for (int i = 0; i < MAX_USER; ++i) {
 			if (clients[i].GetUsing() == false) continue;
 			if (i == client_id) continue;
@@ -233,7 +330,30 @@ void IOCP::ProtocolProcessing(const int& client_id, char* protocol)
 				clients[client_id].send_remove_object_info(clients[i]);
 				clients[i].send_remove_object_info(clients[client_id]);
 			}
-		}		
+		}
+
+		// 시야에서 벗어나는 몬스터 있는지 확인
+		for (int i = 0; i < MAX_MONSTER; ++i) {			
+			if (!clients[client_id].FindViewlist(i + MAX_USER)) continue;
+			if (!clients[client_id].CalcDistance(pos, monsters[i].GetPosition())) {
+				clients[client_id].RemoveViewlist(i);
+				monsters[i].RemoveViewlist(client_id);
+				if (monsters[i].EmptyViewlist() == 0) {					
+					auto L = monsters[i].GetLua();
+					monsters[i].mutex.lock();
+					lua_getglobal(L, "SetState");
+					monsters[i].SetState(false);
+					lua_pushboolean(L, false);
+					if (lua_pcall(L, 1, 0, 0) != LUA_OK) {						
+						std::cerr << "Failed to call SetPosition: " << lua_tostring(L, -1) << std::endl;
+						lua_close(L);
+					}
+					monsters[i].mutex.unlock();
+				}
+				// 서로에게 해당 정보 전송
+				clients[client_id].send_remove_object_info(monsters[i]);
+			}
+		}
 		break;
 	}
 	}
@@ -272,8 +392,8 @@ void IOCP::Initialize(CLIENT* cl, MONSTER* ms)
 	vector<thread> worker_threads;
 	for (int i = 0; i < THREADS_NUM; ++i)
 		worker_threads.emplace_back(&IOCP::worker, this);
-	thread monster_thread{ &IOCP::Monster_Thread, this };
-	monster_thread.join();
+	//thread monster_thread{ &IOCP::Monster_Thread, this };
+	//monster_thread.join();
 	vector<thread> timer_threads;
 	for (int i = 0; i < 8; ++i)
 		timer_threads.emplace_back(&IOCP::do_timer, this);
@@ -362,4 +482,5 @@ void IOCP::Monster_Initialize()
 			}
 		}
 	}	
+	cout << "NPC initialization complete\n";
 }
