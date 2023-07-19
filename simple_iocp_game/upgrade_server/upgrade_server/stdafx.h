@@ -4,7 +4,10 @@
 #include <MSWSock.h>
 #include <vector>
 #include <thread>
+#include <mutex>
 #include <concurrent_queue.h>
+#include <concurrent_unordered_map.h>
+#include <unordered_map>
 
 #pragma comment(lib, "WS2_32.lib")
 #pragma comment(lib, "MSWSock.lib")
