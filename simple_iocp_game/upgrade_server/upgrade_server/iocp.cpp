@@ -101,7 +101,7 @@ void IOCP::IOProcessing(EXT_OVER*& extOver, const DWORD& sizeOfData, const ULONG
 	{
 		int clientID = GetClientID();
 		if (clientID != -1) {
-			cout << "클라이언트 [" << clientID << "번] 님이 입장했습니다.\n";
+			cout << "클라이언트 [" << clientID << "번] 님의 연결요청을 수락했습니다.\n";
 			AddNewClient(0, m_clientSocket, clientID);
 			CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_clientSocket), m_iocpHandle, clientID, 0);
 			auto iter = m_clients.find(clientID);
@@ -109,6 +109,7 @@ void IOCP::IOProcessing(EXT_OVER*& extOver, const DWORD& sizeOfData, const ULONG
 		}
 		else {
 			// 로그인 실패 처리
+			cout << "입장 가능 인원을 초과하여 연결요청을 거부했습니다.\n";
 		}
 		m_clientSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 		ZeroMemory(&extOver->wsaOver, sizeof(extOver->wsaOver));
@@ -117,6 +118,11 @@ void IOCP::IOProcessing(EXT_OVER*& extOver, const DWORD& sizeOfData, const ULONG
 	}
 		break;
 	case OVER_TYPE::RECV:
+		if (sizeOfData == 0) {
+			// 의도하지 않은 상황 연결 끊기
+			break;
+		}
+		PacketAssembly(extOver, sizeOfData, key);
 		break;
 	case OVER_TYPE::SEND:
 		break;
@@ -150,6 +156,11 @@ void IOCP::PacketAssembly(EXT_OVER*& extOver, const DWORD& sizeOfData, int UID)
 void IOCP::PacketProcessing(int clientID, char* packet)
 {
 	switch (packet[1]) {
-
+	case CS_LOGIN:
+	{
+		CS_LOGIN_PROTOCOL* p = reinterpret_cast<CS_LOGIN_PROTOCOL*>(packet);
+		cout << "[" << p->name << "] 님이 접속하셨습니다.\n";
+	}
+		break;
 	}
 }

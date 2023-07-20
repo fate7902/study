@@ -155,6 +155,7 @@
     <ClInclude Include="iocp.h" />
     <ClInclude Include="monster.h" />
     <ClInclude Include="object.h" />
+    <ClInclude Include="protocol.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

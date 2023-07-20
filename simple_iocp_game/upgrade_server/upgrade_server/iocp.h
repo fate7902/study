@@ -2,6 +2,7 @@
 #include "ext_over.h"
 #include "client.h"
 #include "monster.h"
+#include "protocol.h"
 
 class IOCP
 {
