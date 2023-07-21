@@ -9,14 +9,26 @@ public:
 public:
 	OBJECT() = default;
 	OBJECT(const OBJECT& other)
-		: m_position(other.m_position.load()),
+		: m_position(other.m_position.load(memory_order_acquire)),
 		m_UID(other.m_UID)
 	{
 	}
 	OBJECT(OBJECT&& other) noexcept
-		: m_position(other.m_position.load()),
+		: m_position(other.m_position.load(memory_order_acquire)),
 		m_UID(other.m_UID)
 	{
+	}
+	OBJECT& operator=(const OBJECT& other)
+	{
+		if (this == &other) {
+			return *this;
+		}
+
+		// Copy the member variables
+		m_position.store(other.m_position.load(memory_order_acquire),memory_order_release);
+		m_UID = other.m_UID;
+
+		return *this;
 	}
 	~OBJECT() = default;
 
@@ -29,10 +41,10 @@ public:
 		}
 	}
 	void SetPosition(int dir) {
-		pair<int, int> oldPos = m_position.load(memory_order_release);
+		pair<int, int> oldPos = m_position.load(memory_order_acquire);
 		pair<int, int> newPos(oldPos);
 		Move(dir, newPos);
-		while (!m_position.compare_exchange_weak(oldPos, newPos, memory_order_acquire)) {
+		while (!m_position.compare_exchange_weak(oldPos, newPos, memory_order_release)) {
 			newPos = oldPos;
 			Move(dir, newPos);
 		}

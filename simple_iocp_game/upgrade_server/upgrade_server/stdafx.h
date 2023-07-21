@@ -5,6 +5,8 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <shared_mutex>
+#include <unordered_map>
 #include <concurrent_queue.h>
 #include <concurrent_unordered_map.h>
 

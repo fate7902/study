@@ -297,7 +297,7 @@ void Adjust_Number_Of_Client()
 	CS_LOGIN_PROTOCOL l_packet;
 
 	int temp = num_connections;
-	sprintf_s(l_packet.name, "%d", temp);
+	sprintf_s(l_packet.name, "%d¹ø", temp);
 	l_packet.size = sizeof(l_packet);	
 	l_packet.type = CS_LOGIN;
 	SendPacket(num_connections, &l_packet);

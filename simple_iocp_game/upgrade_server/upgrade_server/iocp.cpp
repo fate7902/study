@@ -132,7 +132,9 @@ void IOCP::IOProcessing(EXT_OVER*& extOver, const DWORD& sizeOfData, const ULONG
 void IOCP::AddNewClient(int prevRemainDataSize, SOCKET socket, int UID)
 {
 	CLIENT cl(prevRemainDataSize, socket, UID);
-	m_clients.insert(make_pair(UID, cl));
+	auto iter = m_clients.find(UID);
+	if (iter != m_clients.end()) iter->second = cl;
+	else m_clients.insert(make_pair(UID, cl));
 }
 
 void IOCP::PacketAssembly(EXT_OVER*& extOver, const DWORD& sizeOfData, int UID)
@@ -159,7 +161,7 @@ void IOCP::PacketProcessing(int clientID, char* packet)
 	case CS_LOGIN:
 	{
 		CS_LOGIN_PROTOCOL* p = reinterpret_cast<CS_LOGIN_PROTOCOL*>(packet);
-		cout << "[" << p->name << "] ´ÔÀÌ Á¢¼ÓÇÏ¼Ì½À´Ï´Ù.\n";
+		cout << "[" << clientID << "] ´ÔÀÌ Á¢¼ÓÇÏ¼Ì½À´Ï´Ù.\n";
 	}
 		break;
 	}

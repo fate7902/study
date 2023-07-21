@@ -12,6 +12,7 @@ public:
 	HANDLE m_iocpHandle;
 	EXT_OVER m_acceptOver;
 	concurrent_queue<int> m_IDList;
+	shared_mutex m_smtx;
 	concurrent_unordered_map<int, CLIENT> m_clients;
 
 public :
