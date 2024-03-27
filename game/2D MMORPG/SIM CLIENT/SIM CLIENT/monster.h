@@ -10,7 +10,7 @@ public:
 	Monster() = default;
 	Monster(Texture& texture, int left, int top, int width, int height)
 		: Object(texture, left, top, width, height) {}
-	~Monster() = default;
+	virtual ~Monster() override = default;
 
 	void draw(RenderWindow& window) override;
 };

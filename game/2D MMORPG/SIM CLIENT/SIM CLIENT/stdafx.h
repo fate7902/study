@@ -22,6 +22,7 @@
 using namespace sf;
 
 #include <iostream>
+#include "..\..\SIM SERVER\Project1\packetInfo.h"
 using namespace std;
 
 constexpr auto SCREENWIDTH = 9;

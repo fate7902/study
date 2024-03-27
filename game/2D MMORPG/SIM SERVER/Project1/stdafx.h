@@ -14,5 +14,11 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <concurrent_queue.h>
+#include <concurrent_unordered_map.h>
+#include <atomic>
 
 using namespace std;
+using namespace Concurrency;
+
+enum class MOVETYPE { UP, DOWN, LEFT, RIGHT };

@@ -151,7 +151,11 @@
     <ClInclude Include="extendedOverlapped.h" />
     <ClInclude Include="iocp.h" />
     <ClInclude Include="iocpbase.h" />
-    <ClInclude Include="packet_types.h" />
+    <ClInclude Include="monster.h" />
+    <ClInclude Include="object.h" />
+    <ClInclude Include="objectManager.h" />
+    <ClInclude Include="packetInfo.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
@@ -159,6 +163,10 @@
     <ClCompile Include="iocp.cpp" />
     <ClCompile Include="iocpbase.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="monster.cpp" />
+    <ClCompile Include="object.cpp" />
+    <ClCompile Include="objectManager.cpp" />
+    <ClCompile Include="player.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

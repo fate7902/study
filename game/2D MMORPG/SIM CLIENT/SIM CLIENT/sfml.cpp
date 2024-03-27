@@ -1,9 +1,17 @@
 #include "stdafx.h"
 #include "sfml.h"
 
-void Sfml::run()
+
+
+void Sfml::initialize()
 {
-	SfmlBase::initialize();
+	m_client.m_network.initialize();
+	SfmlBase::initialize();	
+}
+
+void Sfml::run()
+{	
+	initialize();
 	while (m_window.isOpen())
 	{
 		Event event;

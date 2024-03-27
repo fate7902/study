@@ -6,13 +6,17 @@
 #pragma once
 #include "iocpbase.h"
 #include "extendedOverlapped.h"
+#include "objectManager.h"
 
 constexpr int MAXTHREAD = 12;
+constexpr int MAXUSER = 5000;
 
 class Iocp : public IocpBase
 {
 private:
-	ExtendedOverlapped	m_extOver;
+	ExtendedOverlapped			m_extOver;
+	concurrent_queue<int>		m_availableID;
+	ObjectManager				m_objectManager;
 
 public:
 	Iocp() = default;
@@ -22,5 +26,8 @@ public:
 	void initialize();
 
 private:	
+	int getIDAssignment();
 	void worker();
+	void processPacketIO(ExtendedOverlapped*& extOver, DWORD len, ULONG_PTR key);
+	void processPacket(char* packet, ULONG_PTR key);
 };

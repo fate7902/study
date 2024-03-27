@@ -1,19 +1,25 @@
 #pragma once
+#include "player.h"
 constexpr int PORT = 4000;
 constexpr auto SERVERIP = "127.0.0.1";
 constexpr int BUF = 256;
 
 class Network
 {
-protected:
+public:
 	TcpSocket			m_socket;
 	Socket::Status		m_status;
 
-protected:
-	Network() = default;
+	Player*				m_player;
+
+public:
+	Network();
 	~Network() = default;
 
 	void initialize();
+	void sendPacket(void* packet);
+	void sendLogin();
+
 	void recv();
 	void recvPacketChecking(char* recvPacket, size_t received);
 	void processPacket(char* processedPacket);

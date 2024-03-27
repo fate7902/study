@@ -4,13 +4,14 @@
 
 class Sfml : public SfmlBase
 {
-protected:
+public:
 	Client			m_client;
 
 public:
 	Sfml() = default;
-	virtual ~Sfml() = default;
+	virtual ~Sfml() override = default;
 
+	void initialize();
 	void run() override;
 };
 

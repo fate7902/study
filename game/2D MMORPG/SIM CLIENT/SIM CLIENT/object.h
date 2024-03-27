@@ -2,9 +2,9 @@
 
 class Object
 {
-protected:	
+public:	
 	Sprite			m_sprite;
-	int				m_x, m_y;	
+	int				m_x, m_y;
 
 public:
 	Object() = default;

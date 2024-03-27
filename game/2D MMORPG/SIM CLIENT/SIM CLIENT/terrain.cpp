@@ -3,6 +3,6 @@
 
 void Terrain::draw(RenderWindow& window)
 {	
-	Object::setSpritePosition();
+	m_sprite.setPosition(m_x, m_y);
 	window.draw(m_sprite);
 }

@@ -4,7 +4,7 @@
 */
 
 #pragma once
-#include "packet_types.h"
+#include "packetInfo.h"
 
 constexpr int BUFSIZE = 256;
 
