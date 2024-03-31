@@ -19,6 +19,7 @@ public:
 	void initialize();
 	void sendPacket(void* packet);
 	void sendLogin();
+	void sendMove(MOVETYPE moveType);
 
 	void recv();
 	void recvPacketChecking(char* recvPacket, size_t received);

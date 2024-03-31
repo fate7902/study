@@ -28,6 +28,6 @@ public:
 private:	
 	int getIDAssignment();
 	void worker();
-	void processPacketIO(ExtendedOverlapped*& extOver, DWORD len, ULONG_PTR key);
-	void processPacket(char* packet, ULONG_PTR key);
+	void processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key);
+	void processPacket(char* packet, int key);
 };

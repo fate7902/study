@@ -1,6 +1,13 @@
 #include "stdafx.h"
 #include "player.h"
 
+void Player::initialize(SOCKET sock)
+{
+	setPosition(0, 0);
+	m_socket = sock;
+	m_reaminPacketData = 0;
+}
+
 void Player::asynRecv()
 {
 	DWORD recvFlag = 0;
@@ -21,7 +28,37 @@ void Player::sendLoginAllowPacket()
 	SC_LOGIN_ALLOW_PACKET p;
 	p.size = sizeof(SC_LOGIN_ALLOW_PACKET);
 	p.type = SC_LOGIN_ALLOW;
-	p.x = m_x;
-	p.y = m_y;
+	p.x = m_x.load();
+	p.y = m_y.load();
+	sendPacket(&p);
+}
+
+void Player::sendMoveAllowPacket()
+{
+	SC_MOVE_ALLOW_PACKET p;
+	p.size = sizeof(SC_MOVE_ALLOW_PACKET);
+	p.type = SC_MOVE_ALLOW;
+	p.x = m_x.load();
+	p.y = m_y.load();
+	sendPacket(&p);
+}
+
+void Player::sendAddObjectPacket(Object& obj)
+{
+	SC_ADDOBJECT_PACKET p;
+	p.size = sizeof(SC_ADDOBJECT_PACKET);
+	p.type = SC_ADDOBJECT_ALLOW;
+	p.x = obj.m_x.load();
+	p.y = obj.m_y.load();
+	p.id = obj.m_id;
+	sendPacket(&p);
+}
+
+void Player::sendDeleteObjectPacket(int id)
+{
+	SC_DELETEOBJECT_PACKET p;
+	p.size = sizeof(SC_DELETEOBJECT_PACKET);
+	p.type = SC_DELETEOBJECT_ALLOW;
+	p.id = id;
 	sendPacket(&p);
 }

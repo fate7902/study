@@ -21,7 +21,12 @@ void Sfml::run()
 				m_window.close();
 			if (event.type == Event::KeyPressed) {
 				// 키 입력 관리
-				switch (event.key.code) {				
+				switch (event.key.code) {
+				case Keyboard::Up: m_client.m_network.sendMove(MOVETYPE::UP); break;
+				case Keyboard::Down: m_client.m_network.sendMove(MOVETYPE::DOWN); break;
+				case Keyboard::Left: m_client.m_network.sendMove(MOVETYPE::LEFT); break;
+				case Keyboard::Right: m_client.m_network.sendMove(MOVETYPE::RIGHT); break;
+				default: break;
 				}
 			}
 		}

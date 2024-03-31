@@ -31,3 +31,5 @@ constexpr auto TILEWIDTH = 50;
 constexpr auto TILEHEIGHT = 50;
 constexpr auto WINDOWWIDTH = TILEWIDTH * SCREENWIDTH + 10;
 constexpr auto WINDOWHEIGHT = TILEHEIGHT * SCREENHEIGHT + 10;
+
+enum class MOVETYPE { UP, DOWN, LEFT, RIGHT };

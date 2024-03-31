@@ -21,14 +21,15 @@ void Object::setPosition(int x, int y)
 {
 	m_x.store(x);
 	m_y.store(y);
+	m_zone = x % 50 + (y % 50) * (MAPWIDTH / 50);
 }
 
 void Object::setPosition(MOVETYPE movetype)
 {
 	switch (movetype) {
-	case MOVETYPE::UP: m_y.fetch_sub(1); break;
-	case MOVETYPE::DOWN: m_y.fetch_add(1);  break;
-	case MOVETYPE::LEFT: m_x.fetch_sub(1);  break;
-	case MOVETYPE::RIGHT: m_x.fetch_add(1);  break;
+	case MOVETYPE::UP: if(m_y > 0) m_y.fetch_sub(1); break;
+	case MOVETYPE::DOWN: if(m_y < SCREENHEIGHT - 1) m_y.fetch_add(1);  break;
+	case MOVETYPE::LEFT: if(m_x > 0) m_x.fetch_sub(1);  break;
+	case MOVETYPE::RIGHT: if(m_x < SCREENWIDTH - 1) m_x.fetch_add(1);  break;
 	}
 }

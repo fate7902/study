@@ -33,6 +33,15 @@ void Network::sendLogin()
 	sendPacket(&p);
 }
 
+void Network::sendMove(MOVETYPE moveType)
+{
+	CS_MOVE_REQUEST_PACKET p;
+	p.size = sizeof(CS_MOVE_REQUEST_PACKET);
+	p.type = CS_MOVE_REQUEST;
+	p.moveType = static_cast<int>(moveType);
+	sendPacket(&p);
+}
+
 void Network::recv()
 {
 	char recvPacket[BUF];
@@ -81,6 +90,13 @@ void Network::processPacket(char* processedPacket)
 	{
 		cout << "로그인 성공\n";
 		SC_LOGIN_ALLOW_PACKET* p = reinterpret_cast<SC_LOGIN_ALLOW_PACKET*>(processedPacket);
+		m_player->setPosition(p->x, p->y);
+	}
+	break;
+	case SC_MOVE_ALLOW:
+	{
+		cout << "이동 성공\n";
+		SC_MOVE_ALLOW_PACKET* p = reinterpret_cast<SC_MOVE_ALLOW_PACKET*>(processedPacket);
 		m_player->setPosition(p->x, p->y);
 	}
 	break;
