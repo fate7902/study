@@ -131,7 +131,7 @@ void Iocp::processPacket(char* packet, int key)
 	{
 		cout << "[로그인성공] 고유키 값 : " << key << " 사용 유저 로그인성공!\n";
 		CS_LOGIN_REQUEST_PACKET* p = reinterpret_cast<CS_LOGIN_REQUEST_PACKET*>(packet);
-		m_objectManager.m_player[key].setPosition(2, 2);
+		m_objectManager.m_player[key].setPosition(rand() % 2000, rand() % 2000);
 		int zoneNumber = m_objectManager.m_player[key].m_zone;
 		cout << "[존 확인] 코유키 값 : " << key << " 사용 유저 존 넘버 : " << zoneNumber << "\n";
 		m_objectManager.m_zone[zoneNumber].insert(key);
@@ -142,8 +142,10 @@ void Iocp::processPacket(char* packet, int key)
 		for (int x = -1; x <= 1; ++x) {
 			for (int y = -1; y <= 1; ++y) {
 				int currentZone = zoneNumber + x + (MAPWIDTH / ZONESIZE) * y;
-				if (currentZone < 0) continue;
+				if (currentZone < 0 || currentZone > 399) continue;
+				m_objectManager.m_zoneMutex[currentZone].lock();
 				concurrent_unordered_set<int> copylist = m_objectManager.m_zone[currentZone];
+				m_objectManager.m_zoneMutex[currentZone].unlock();
 				for (const auto& id : copylist) {
 					if (id == key) continue;
 					if (!m_objectManager.calcInRange(m_objectManager.m_player[key], m_objectManager.m_player[id])) continue;
@@ -200,8 +202,10 @@ void Iocp::processPacket(char* packet, int key)
 		for (int x = -1; x <= 1; ++x) {
 			for (int y = -1; y <= 1; ++y) {
 				int currentZone = newZone + x + (MAPWIDTH / ZONESIZE) * y;
-				if (currentZone < 0) continue;
+				if (currentZone < 0 || currentZone > 399) continue;
+				m_objectManager.m_zoneMutex[currentZone].lock();
 				concurrent_unordered_set<int> copylist = m_objectManager.m_zone[currentZone];
+				m_objectManager.m_zoneMutex[currentZone].unlock();
 				for (const auto& id : copylist) {
 					if (id == key) continue;
 					if (!m_objectManager.calcInRange(m_objectManager.m_player[key], m_objectManager.m_player[id])) continue;
