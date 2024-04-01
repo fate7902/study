@@ -10,10 +10,12 @@ public:
 	TcpSocket			m_socket;
 	Socket::Status		m_status;
 
-	Player*				m_player;
+	Player				m_player;
+	Player*				m_otherPlayer;
+	int					m_id;
 
 public:
-	Network();
+	Network() = default;
 	~Network() = default;
 
 	void initialize();

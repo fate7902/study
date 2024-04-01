@@ -1,9 +1,7 @@
 #include "stdafx.h"
 #include "network.h"
 
-Network::Network()
-{
-}
+extern int g_x, g_y;
 
 void Network::initialize()
 {
@@ -90,14 +88,40 @@ void Network::processPacket(char* processedPacket)
 	{
 		cout << "로그인 성공\n";
 		SC_LOGIN_ALLOW_PACKET* p = reinterpret_cast<SC_LOGIN_ALLOW_PACKET*>(processedPacket);
-		m_player->setPosition(p->x, p->y);
+		m_player.setPosition(p->x, p->y);
+		m_player.m_showing = true;
+		m_id = p->id;
+		g_x = m_player.m_x - 4;
+		g_y = m_player.m_y - 4;
 	}
 	break;
 	case SC_MOVE_ALLOW:
 	{
 		cout << "이동 성공\n";
 		SC_MOVE_ALLOW_PACKET* p = reinterpret_cast<SC_MOVE_ALLOW_PACKET*>(processedPacket);
-		m_player->setPosition(p->x, p->y);
+		if (m_id == p->id) {
+			m_player.setPosition(p->x, p->y);
+			g_x = m_player.m_x - 4;
+			g_y = m_player.m_y - 4;
+		}
+		else {
+			m_otherPlayer[p->id].setPosition(p->x, p->y);
+		}
+	}
+	break;
+	case SC_ADDOBJECT_ALLOW:
+	{
+		cout << "오브젝트 추가\n";
+		SC_ADDOBJECT_PACKET* p = reinterpret_cast<SC_ADDOBJECT_PACKET*>(processedPacket);
+		m_otherPlayer[p->id].setPosition(p->x, p->y);
+		m_otherPlayer[p->id].m_showing = true;
+	}
+	break;
+	case SC_DELETEOBJECT_ALLOW:
+	{
+		cout << "오브젝트 삭제\n";
+		SC_DELETEOBJECT_PACKET* p = reinterpret_cast<SC_DELETEOBJECT_PACKET*>(processedPacket);
+		m_otherPlayer[p->id].m_showing = false;
 	}
 	break;
 	default: break;

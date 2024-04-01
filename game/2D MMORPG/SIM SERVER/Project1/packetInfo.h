@@ -23,12 +23,14 @@ struct SC_LOGIN_ALLOW_PACKET {
 	unsigned char size;
 	char type;
 	int x, y;
+	int id;
 };
 
 struct SC_MOVE_ALLOW_PACKET {
 	unsigned char size;
 	char type;
 	int x, y;
+	int id;
 };
 
 struct SC_ADDOBJECT_PACKET {

@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "sfml.h"
 
-
-
 void Sfml::initialize()
 {
 	m_client.m_network.initialize();

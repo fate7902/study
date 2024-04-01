@@ -10,6 +10,7 @@
 
 constexpr int MAXTHREAD = 12;
 constexpr int MAXUSER = 5000;
+constexpr int ZONE = MAPWIDTH / ZONESIZE * MAPHEIGHT / ZONESIZE;
 
 class Iocp : public IocpBase
 {
@@ -27,6 +28,7 @@ public:
 
 private:	
 	int getIDAssignment();
+	void disconnect(int key);
 	void worker();
 	void processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key);
 	void processPacket(char* packet, int key);

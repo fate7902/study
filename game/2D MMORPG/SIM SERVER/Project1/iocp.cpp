@@ -4,7 +4,8 @@
 void Iocp::initialize()
 {	
 	cout << "[Loading] Iocp::initialize()\n";
-
+	m_objectManager.m_zone = new concurrent_unordered_set<int>[ZONE];
+	m_objectManager.m_zoneMutex = new mutex[ZONE];
 	for (int i = 1; i <= MAXUSER; i++) m_availableID.push(i);
 
 	IocpBase::initialize();
@@ -27,6 +28,24 @@ int Iocp::getIDAssignment()
 	else return -1;
 }
 
+void Iocp::disconnect(int key)
+{
+	int zone = m_objectManager.m_player[key].m_zone;
+	m_objectManager.m_zoneMutex[zone].lock();
+	m_objectManager.m_zone[zone].unsafe_erase(key);
+	m_objectManager.m_zoneMutex[zone].unlock();
+
+	concurrent_unordered_set<int> oldlist = m_objectManager.m_player[key].m_viewlist;
+	for (const auto& id : oldlist) {
+		m_objectManager.m_player[id].m_viewlistMutex.lock();
+		m_objectManager.m_player[id].m_viewlist.unsafe_erase(key);
+		m_objectManager.m_player[id].m_viewlistMutex.unlock();
+		m_objectManager.m_player[id].sendDeleteObjectPacket(key);
+	}
+	cout << "Logout on client[" << key << "]\n";
+	m_availableID.push(key);
+}
+
 void Iocp::worker()
 {
 	while (true) {
@@ -38,9 +57,9 @@ void Iocp::worker()
 		if (bret == false) {
 			if (OVERTYPE::ACCEPT == extOver->m_overType)
 				cout << "Accept Error\n";
-			else {
-				cout << "Logout on client[" << key << "]\n";
+			else {				
 				// 로그아웃 처리 필요
+				disconnect(static_cast<int>(key));
 				continue;
 			}
 		}
@@ -78,6 +97,8 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 	{
 		if (len == 0) {
 			// 접속 끊기
+			disconnect(key);
+			break;
 		}
 		int remainPacketData = len + m_objectManager.m_player[key].m_reaminPacketData;
 		char* p = extOver->m_sendBuf;
@@ -110,8 +131,9 @@ void Iocp::processPacket(char* packet, int key)
 	{
 		cout << "[로그인성공] 고유키 값 : " << key << " 사용 유저 로그인성공!\n";
 		CS_LOGIN_REQUEST_PACKET* p = reinterpret_cast<CS_LOGIN_REQUEST_PACKET*>(packet);
-		m_objectManager.m_player[key].setPosition(rand() % 8, rand() % 8);
-		int zoneNumber = m_objectManager.m_player[key].m_zone;		
+		m_objectManager.m_player[key].setPosition(2, 2);
+		int zoneNumber = m_objectManager.m_player[key].m_zone;
+		cout << "[존 확인] 코유키 값 : " << key << " 사용 유저 존 넘버 : " << zoneNumber << "\n";
 		m_objectManager.m_zone[zoneNumber].insert(key);
 		m_objectManager.m_player[key].sendLoginAllowPacket();
 
@@ -119,7 +141,7 @@ void Iocp::processPacket(char* packet, int key)
 		// 자신이 속한 zone과 그 주위의 zone만 처리
 		for (int x = -1; x <= 1; ++x) {
 			for (int y = -1; y <= 1; ++y) {
-				int currentZone = zoneNumber + x + (MAPWIDTH / 50) * y;
+				int currentZone = zoneNumber + x + (MAPWIDTH / ZONESIZE) * y;
 				if (currentZone < 0) continue;
 				concurrent_unordered_set<int> copylist = m_objectManager.m_zone[currentZone];
 				for (const auto& id : copylist) {
@@ -141,11 +163,11 @@ void Iocp::processPacket(char* packet, int key)
 		cout << "[이동] 고유키 값 : " << key << " 사용 유저 이동!\n";
 		CS_MOVE_REQUEST_PACKET* p = reinterpret_cast<CS_MOVE_REQUEST_PACKET*>(packet);
 		m_objectManager.m_player[key].setPosition(static_cast<MOVETYPE>(p->moveType));		
-		m_objectManager.m_player[key].sendMoveAllowPacket();
+		m_objectManager.m_player[key].sendMoveAllowPacket(m_objectManager.m_player[key]);
 
 		// 유저의 이동으로 인한 유저와의 시야변화처리
 		// 1. 이동한 유저의 zone 변화 확인
-		int newZone = m_objectManager.m_player[key].m_x.load() % 50 + (m_objectManager.m_player[key].m_y.load() % 50) * (MAPWIDTH / 50);
+		int newZone = m_objectManager.m_player[key].m_x.load() / ZONESIZE + (m_objectManager.m_player[key].m_y.load() / ZONESIZE) * (MAPWIDTH / ZONESIZE);
 		if (m_objectManager.m_player[key].m_zone != newZone) {
 			int oldZone = m_objectManager.m_player[key].m_zone;
 			m_objectManager.m_zoneMutex[oldZone].lock();
@@ -157,29 +179,33 @@ void Iocp::processPacket(char* packet, int key)
 		// 2. 기존의 viewlist에 있던 오브젝트와 거리 재확인
 		concurrent_unordered_set<int> oldlist = m_objectManager.m_player[key].m_viewlist;
 		for (const auto& id : oldlist) {
-			if (m_objectManager.calcInRange(m_objectManager.m_player[key], m_objectManager.m_player[id])) continue;
-			// 이동 유저의 viewlist 처리
-			m_objectManager.m_player[key].m_viewlistMutex.lock();
-			m_objectManager.m_player[key].m_viewlist.unsafe_erase(id);
-			m_objectManager.m_player[key].m_viewlistMutex.unlock();
-			m_objectManager.m_player[key].sendDeleteObjectPacket(id);
+			if (!m_objectManager.calcInRange(m_objectManager.m_player[key], m_objectManager.m_player[id])) {
+				// 이동 유저의 viewlist 처리
+				m_objectManager.m_player[key].m_viewlistMutex.lock();
+				m_objectManager.m_player[key].m_viewlist.unsafe_erase(id);
+				m_objectManager.m_player[key].m_viewlistMutex.unlock();
+				m_objectManager.m_player[key].sendDeleteObjectPacket(id);
 
-			// 처리한 유저의 viewlist 처리
-			m_objectManager.m_player[id].m_viewlistMutex.lock();
-			m_objectManager.m_player[id].m_viewlist.unsafe_erase(key);
-			m_objectManager.m_player[id].m_viewlistMutex.unlock();
-			m_objectManager.m_player[id].sendDeleteObjectPacket(key);
+				// 처리한 유저의 viewlist 처리
+				m_objectManager.m_player[id].m_viewlistMutex.lock();
+				m_objectManager.m_player[id].m_viewlist.unsafe_erase(key);
+				m_objectManager.m_player[id].m_viewlistMutex.unlock();
+				m_objectManager.m_player[id].sendDeleteObjectPacket(key);
+			}
+			else {
+				m_objectManager.m_player[id].sendMoveAllowPacket(m_objectManager.m_player[key]);
+			}
 		}
 		// 3. 접속시와 마찬가지로 주위 zone을 포함하여 새로 보이는 유저 확인
 		for (int x = -1; x <= 1; ++x) {
 			for (int y = -1; y <= 1; ++y) {
-				int currentZone = newZone + x + (MAPWIDTH / 50) * y;
+				int currentZone = newZone + x + (MAPWIDTH / ZONESIZE) * y;
 				if (currentZone < 0) continue;
 				concurrent_unordered_set<int> copylist = m_objectManager.m_zone[currentZone];
 				for (const auto& id : copylist) {
 					if (id == key) continue;
 					if (!m_objectManager.calcInRange(m_objectManager.m_player[key], m_objectManager.m_player[id])) continue;
-					if (m_objectManager.m_player[key].m_viewlist.find(id) == m_objectManager.m_player[key].m_viewlist.end()) continue;
+					if (m_objectManager.m_player[key].m_viewlist.find(id) != m_objectManager.m_player[key].m_viewlist.end()) continue;
 					m_objectManager.m_player[key].m_viewlist.insert(id);
 					m_objectManager.m_player[key].sendAddObjectPacket(m_objectManager.m_player[id]);
 					m_objectManager.m_player[id].m_viewlist.insert(key);

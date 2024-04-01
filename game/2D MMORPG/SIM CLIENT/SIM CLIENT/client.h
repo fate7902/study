@@ -12,8 +12,7 @@ public:
 	Texture*			m_characterTexture;
 
 	Terrain				m_terrainSand, m_terrainStone;
-	Monster				m_monster;
-	Player				m_player;
+	Monster				m_monster;	
 
 	Network				m_network;
 

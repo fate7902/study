@@ -14,18 +14,21 @@ Client::Client()
 
 
 	m_monsterTexture = new Texture;
-	m_monsterTexture->loadFromFile("monster.png");
-	// 이미지 위치에 대한 숫자 조정 필요
+	m_monsterTexture->loadFromFile("monster.png");	
 	m_monster = Monster(*m_monsterTexture, 12, 13, TILEWIDTH, TILEHEIGHT);
 
 	m_characterTexture = new Texture;
-	m_characterTexture->loadFromFile("character.png");
-	// 이미지 위치에 대한 숫자 조정 필요
-	m_player = Player(*m_characterTexture, 60, 290, 175, 195);
-	m_player.setScale(0.3f, 0.23f);
-	m_player.setPosition(0, 0);
-
-	m_network.m_player = &m_player;
+	m_characterTexture->loadFromFile("character.png");	
+	m_network.m_player = Player(*m_characterTexture, 60, 290, 175, 195);
+	m_network.m_player.setScale(0.3f, 0.23f);
+	m_network.m_player.setPosition(0, 0);
+	m_network.m_otherPlayer = new Player[MAXUSER];
+	for (int i = 0; i < MAXUSER; ++i) {
+		m_network.m_otherPlayer[i] = Player(*m_characterTexture, 235, 290, 175, 195);
+		m_network.m_otherPlayer[i].setScale(0.3f, 0.23f);
+		m_network.m_otherPlayer[i].setPosition(0, 0);
+		m_network.m_otherPlayer[i].m_showing = false;
+	}
 }
 
 Client::~Client()
@@ -59,5 +62,10 @@ void Client::rendering(RenderWindow& window)
 	}
 
 	// 유저 및 몬스터 그리기
-	m_player.draw(window);
+	for (int i = 0; i < MAXUSER; ++i) {
+		if (m_network.m_otherPlayer[i].m_showing) {
+			m_network.m_otherPlayer[i].draw(window);
+		}
+	}
+	m_network.m_player.draw(window);
 }

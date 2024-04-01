@@ -30,16 +30,18 @@ void Player::sendLoginAllowPacket()
 	p.type = SC_LOGIN_ALLOW;
 	p.x = m_x.load();
 	p.y = m_y.load();
+	p.id = m_id;
 	sendPacket(&p);
 }
 
-void Player::sendMoveAllowPacket()
+void Player::sendMoveAllowPacket(Object& obj)
 {
 	SC_MOVE_ALLOW_PACKET p;
 	p.size = sizeof(SC_MOVE_ALLOW_PACKET);
 	p.type = SC_MOVE_ALLOW;
-	p.x = m_x.load();
-	p.y = m_y.load();
+	p.x = obj.m_x.load();
+	p.y = obj.m_y.load();
+	p.id = obj.m_id;
 	sendPacket(&p);
 }
 
