@@ -112,7 +112,7 @@ void Network::processPacket(char* processedPacket)
 	case SC_ADDOBJECT_ALLOW:
 	{
 		cout << "오브젝트 추가\n";
-		SC_ADDOBJECT_PACKET* p = reinterpret_cast<SC_ADDOBJECT_PACKET*>(processedPacket);
+		SC_ADDOBJECT_ALLOW_PACKET* p = reinterpret_cast<SC_ADDOBJECT_ALLOW_PACKET*>(processedPacket);
 		m_otherPlayer[p->id].setPosition(p->x, p->y);
 		m_otherPlayer[p->id].m_showing = true;
 	}
@@ -120,7 +120,7 @@ void Network::processPacket(char* processedPacket)
 	case SC_DELETEOBJECT_ALLOW:
 	{
 		cout << "오브젝트 삭제\n";
-		SC_DELETEOBJECT_PACKET* p = reinterpret_cast<SC_DELETEOBJECT_PACKET*>(processedPacket);
+		SC_DELETEOBJECT_ALLOW_PACKET* p = reinterpret_cast<SC_DELETEOBJECT_ALLOW_PACKET*>(processedPacket);
 		m_otherPlayer[p->id].m_showing = false;
 	}
 	break;

@@ -163,7 +163,7 @@ void Iocp::processPacket(char* packet, int key)
 		cout << "[이동] 고유키 값 : " << key << " 사용 유저 이동!\n";
 		CS_MOVE_REQUEST_PACKET* p = reinterpret_cast<CS_MOVE_REQUEST_PACKET*>(packet);
 		m_objectManager.m_player[key].setPosition(static_cast<MOVETYPE>(p->moveType));		
-		m_objectManager.m_player[key].sendMoveAllowPacket(m_objectManager.m_player[key]);
+		m_objectManager.m_player[key].sendMoveAllowPacket(m_objectManager.m_player[key], p->clientTime);
 
 		// 유저의 이동으로 인한 유저와의 시야변화처리
 		// 1. 이동한 유저의 zone 변화 확인
@@ -193,7 +193,7 @@ void Iocp::processPacket(char* packet, int key)
 				m_objectManager.m_player[id].sendDeleteObjectPacket(key);
 			}
 			else {
-				m_objectManager.m_player[id].sendMoveAllowPacket(m_objectManager.m_player[key]);
+				m_objectManager.m_player[id].sendMoveAllowPacket(m_objectManager.m_player[key], p->clientTime);
 			}
 		}
 		// 3. 접속시와 마찬가지로 주위 zone을 포함하여 새로 보이는 유저 확인

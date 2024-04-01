@@ -34,7 +34,7 @@ void Player::sendLoginAllowPacket()
 	sendPacket(&p);
 }
 
-void Player::sendMoveAllowPacket(Object& obj)
+void Player::sendMoveAllowPacket(Object& obj, unsigned time)
 {
 	SC_MOVE_ALLOW_PACKET p;
 	p.size = sizeof(SC_MOVE_ALLOW_PACKET);
@@ -42,13 +42,14 @@ void Player::sendMoveAllowPacket(Object& obj)
 	p.x = obj.m_x.load();
 	p.y = obj.m_y.load();
 	p.id = obj.m_id;
+	p.clientTime = time;
 	sendPacket(&p);
 }
 
 void Player::sendAddObjectPacket(Object& obj)
 {
-	SC_ADDOBJECT_PACKET p;
-	p.size = sizeof(SC_ADDOBJECT_PACKET);
+	SC_ADDOBJECT_ALLOW_PACKET p;
+	p.size = sizeof(SC_ADDOBJECT_ALLOW_PACKET);
 	p.type = SC_ADDOBJECT_ALLOW;
 	p.x = obj.m_x.load();
 	p.y = obj.m_y.load();
@@ -58,8 +59,8 @@ void Player::sendAddObjectPacket(Object& obj)
 
 void Player::sendDeleteObjectPacket(int id)
 {
-	SC_DELETEOBJECT_PACKET p;
-	p.size = sizeof(SC_DELETEOBJECT_PACKET);
+	SC_DELETEOBJECT_ALLOW_PACKET p;
+	p.size = sizeof(SC_DELETEOBJECT_ALLOW_PACKET);
 	p.type = SC_DELETEOBJECT_ALLOW;
 	p.id = id;
 	sendPacket(&p);

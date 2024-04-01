@@ -26,7 +26,7 @@ public:
 	void asynRecv();
 	void sendPacket(void* packet);
 	void sendLoginAllowPacket();
-	void sendMoveAllowPacket(Object& obj);
+	void sendMoveAllowPacket(Object& obj, unsigned time);
 	void sendAddObjectPacket(Object& obj);
 	void sendDeleteObjectPacket(int id);
 };

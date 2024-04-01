@@ -31,16 +31,17 @@ struct SC_MOVE_ALLOW_PACKET {
 	char type;
 	int x, y;
 	int id;
+	unsigned clientTime;
 };
 
-struct SC_ADDOBJECT_PACKET {
+struct SC_ADDOBJECT_ALLOW_PACKET {
 	unsigned char size;
 	char type;
 	int x, y;
 	int id;
 };
 
-struct SC_DELETEOBJECT_PACKET {
+struct SC_DELETEOBJECT_ALLOW_PACKET {
 	unsigned char size;
 	char type;
 	int id;
@@ -56,5 +57,6 @@ struct CS_MOVE_REQUEST_PACKET {
 	unsigned char size;
 	char type;
 	int moveType;
+	unsigned clientTime;
 };
 #pragma pack(pop)
