@@ -78,7 +78,7 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 		//SOCKET clientSocket = reinterpret_cast<SOCKET>(extOver->m_wsaBuf.buf);
 		int assignmentID = getIDAssignment();
 		if (assignmentID != -1) {
-			cout << "[접속성공] 고유키 값 : " << assignmentID << " 사용 유저 접속!\n";
+			//cout << "[접속성공] 고유키 값 : " << assignmentID << " 사용 유저 접속!\n";
 			m_objectManager.m_player.insert(make_pair(assignmentID, Player(assignmentID, 100)));
 			m_objectManager.m_player[assignmentID].initialize(m_clientSock);			
 			CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_clientSock), m_iocpHandle, assignmentID, 0);
@@ -129,11 +129,11 @@ void Iocp::processPacket(char* packet, int key)
 	{
 	case CS_LOGIN_REQUEST:
 	{
-		cout << "[로그인성공] 고유키 값 : " << key << " 사용 유저 로그인성공!\n";
+		//cout << "[로그인성공] 고유키 값 : " << key << " 사용 유저 로그인성공!\n";
 		CS_LOGIN_REQUEST_PACKET* p = reinterpret_cast<CS_LOGIN_REQUEST_PACKET*>(packet);
 		m_objectManager.m_player[key].setPosition(rand() % 2000, rand() % 2000);
 		int zoneNumber = m_objectManager.m_player[key].m_zone;
-		cout << "[존 확인] 코유키 값 : " << key << " 사용 유저 존 넘버 : " << zoneNumber << "\n";
+		//cout << "[존 확인] 코유키 값 : " << key << " 사용 유저 존 넘버 : " << zoneNumber << "\n";
 		m_objectManager.m_zone[zoneNumber].insert(key);
 		m_objectManager.m_player[key].sendLoginAllowPacket();
 
@@ -142,7 +142,7 @@ void Iocp::processPacket(char* packet, int key)
 		for (int x = -1; x <= 1; ++x) {
 			for (int y = -1; y <= 1; ++y) {
 				int currentZone = zoneNumber + x + (MAPWIDTH / ZONESIZE) * y;
-				if (currentZone < 0 || currentZone > 399) continue;
+				if (currentZone < 0 || currentZone > 399 || (currentZone % 19 == 0 && x == 1) || (currentZone % 20 == 0 && x == -1)) continue;
 				m_objectManager.m_zoneMutex[currentZone].lock();
 				concurrent_unordered_set<int> copylist = m_objectManager.m_zone[currentZone];
 				m_objectManager.m_zoneMutex[currentZone].unlock();
@@ -162,7 +162,7 @@ void Iocp::processPacket(char* packet, int key)
 	break;
 	case CS_MOVE_REQUEST:
 	{
-		cout << "[이동] 고유키 값 : " << key << " 사용 유저 이동!\n";
+		//cout << "[이동] 고유키 값 : " << key << " 사용 유저 이동!\n";
 		CS_MOVE_REQUEST_PACKET* p = reinterpret_cast<CS_MOVE_REQUEST_PACKET*>(packet);
 		m_objectManager.m_player[key].setPosition(static_cast<MOVETYPE>(p->moveType));		
 		m_objectManager.m_player[key].sendMoveAllowPacket(m_objectManager.m_player[key], p->clientTime);
@@ -202,7 +202,7 @@ void Iocp::processPacket(char* packet, int key)
 		for (int x = -1; x <= 1; ++x) {
 			for (int y = -1; y <= 1; ++y) {
 				int currentZone = newZone + x + (MAPWIDTH / ZONESIZE) * y;
-				if (currentZone < 0 || currentZone > 399) continue;
+				if (currentZone < 0 || currentZone > 399 || (currentZone % 19 == 0 && x == 1) || (currentZone % 20 == 0 && x == -1)) continue;
 				m_objectManager.m_zoneMutex[currentZone].lock();
 				concurrent_unordered_set<int> copylist = m_objectManager.m_zone[currentZone];
 				m_objectManager.m_zoneMutex[currentZone].unlock();
