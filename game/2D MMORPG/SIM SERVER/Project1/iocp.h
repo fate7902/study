@@ -10,13 +10,12 @@
 
 constexpr int MAXTHREAD = 12;
 constexpr int MAXUSER = 5000;
-constexpr int ZONE = MAPWIDTH / ZONESIZE * MAPHEIGHT / ZONESIZE;
 
 class Iocp : public IocpBase
 {
 private:
 	ExtendedOverlapped			m_extOver;
-	concurrent_queue<int>		m_availableID;
+	concurrent_queue<int>*		m_availableID;
 	ObjectManager				m_objectManager;
 
 public:

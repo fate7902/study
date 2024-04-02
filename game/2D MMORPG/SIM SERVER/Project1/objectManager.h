@@ -7,15 +7,15 @@ constexpr int VIEWRANGE = 3;
 class ObjectManager
 {
 public:
-	concurrent_unordered_map<int, Player>	m_player;
+	concurrent_unordered_map<int, Player>*	m_player;
 	mutex									m_playerMutex;
 
 	concurrent_unordered_set<int>*			m_zone;
 	mutex*									m_zoneMutex;
 
 public:
-	ObjectManager() = default;
-	~ObjectManager() = default;
+	ObjectManager();
+	~ObjectManager();
 
 public:
 	// 두 오브젝트가 시야범위 안에 존재하는 지 측정하는 함수

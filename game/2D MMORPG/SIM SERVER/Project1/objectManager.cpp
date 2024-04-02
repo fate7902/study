@@ -1,6 +1,20 @@
 #include "stdafx.h"
 #include "objectManager.h"
 
+ObjectManager::ObjectManager()
+{
+    m_player = new concurrent_unordered_map<int, Player>;
+    m_zone = new concurrent_unordered_set<int>[ZONE];
+    m_zoneMutex = new mutex[ZONE];
+}
+
+ObjectManager::~ObjectManager()
+{
+    delete m_player;
+    delete[] m_zone;
+    delete[] m_zoneMutex;
+}
+
 bool ObjectManager::calcInRange(Object& objA, Object& objB)
 {
     double objA_x = objA.m_x.load(), objA_y = objA.m_y.load();

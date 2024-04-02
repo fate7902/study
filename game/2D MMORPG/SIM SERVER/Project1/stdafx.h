@@ -28,5 +28,6 @@ constexpr auto SCREENHEIGHT = 9;
 constexpr int MAPWIDTH = 2000;
 constexpr int MAPHEIGHT = 2000;
 constexpr int ZONESIZE = 50;
+constexpr int ZONE = MAPWIDTH / ZONESIZE * MAPHEIGHT / ZONESIZE;
 
 enum class MOVETYPE { UP, DOWN, LEFT, RIGHT };

@@ -1,6 +1,16 @@
 #include "stdafx.h"
 #include "player.h"
 
+Player::Player()
+{
+	m_viewlist = new concurrent_unordered_set<int>;
+}
+
+Player::~Player()
+{
+	delete m_viewlist;
+}
+
 void Player::initialize(SOCKET sock)
 {
 	setPosition(0, 0);

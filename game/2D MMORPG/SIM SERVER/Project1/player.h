@@ -6,7 +6,7 @@ class Player : public Object
 {
 public:	
 	atomic<int>						m_exp;
-	concurrent_unordered_set<int>	m_viewlist;
+	concurrent_unordered_set<int>*	m_viewlist;
 	mutex							m_viewlistMutex;
 
 	int								m_reaminPacketData;
@@ -14,13 +14,17 @@ public:
 	ExtendedOverlapped				m_recvOver;
 
 public:
-	Player() = default;
-	Player(int id, int hp) : Object(id, hp) {}
+	Player();
+	Player(int id, int hp) : Object(id, hp){
+		m_viewlist = new concurrent_unordered_set<int>;
+	}
 	Player(const Player& other)
-		: Object(other), m_exp(other.m_exp.load()), m_viewlist(other.m_viewlist),
+		: Object(other), m_exp(other.m_exp.load()),
 		m_reaminPacketData(other.m_reaminPacketData),
-		m_socket(other.m_socket), m_recvOver(other.m_recvOver) {}
-	~Player() = default;
+		m_socket(other.m_socket), m_recvOver(other.m_recvOver) {
+		m_viewlist = new concurrent_unordered_set<int>(*other.m_viewlist);
+	}
+	~Player();
 
 	void initialize(SOCKET sock);
 	void asynRecv();
