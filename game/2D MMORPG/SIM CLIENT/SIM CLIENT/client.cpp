@@ -12,15 +12,14 @@ Client::Client()
 	m_terrainSand.setScale(1.f, 1.2f);
 	m_terrainStone.setScale(1.f, 1.2f);
 
-
-	m_monsterTexture = new Texture;
-	m_monsterTexture->loadFromFile("monster.png");	
-	m_monster = Monster(*m_monsterTexture, 12, 13, TILEWIDTH, TILEHEIGHT);
-
 	m_characterTexture = new Texture;
-	m_characterTexture->loadFromFile("character.png");	
-	m_network.m_player = Player(*m_characterTexture, 60, 290, 175, 195);
-	m_network.m_player.setScale(0.3f, 0.23f);
+	//m_characterTexture->loadFromFile("character.png");	
+	//m_network.m_player = Player(*m_characterTexture, 60, 290, 175, 195);
+	//m_network.m_player.setScale(0.3f, 0.23f);
+	//m_network.m_player.setPosition(0, 0);
+	m_characterTexture->loadFromFile("monster.png");	
+	m_network.m_player = Player(*m_characterTexture, 0, 0, 50, 50);
+	m_network.m_player.setScale(1.f, 1.f);
 	m_network.m_player.setPosition(0, 0);
 	m_network.m_otherPlayer = new Player[MAXUSER];
 	for (int i = 0; i < MAXUSER; ++i) {
@@ -34,7 +33,6 @@ Client::Client()
 Client::~Client()
 {
 	delete m_terrainTexture;
-	delete m_monsterTexture;
 	delete m_characterTexture;
 }
 

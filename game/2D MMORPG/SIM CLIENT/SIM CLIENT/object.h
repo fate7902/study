@@ -5,6 +5,7 @@ class Object
 public:	
 	Sprite			m_sprite;
 	int				m_x, m_y;
+	int				m_id;
 	bool			m_showing;
 
 public:

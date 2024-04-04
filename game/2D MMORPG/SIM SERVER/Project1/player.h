@@ -24,7 +24,7 @@ public:
 		m_socket(other.m_socket), m_recvOver(other.m_recvOver) {
 		m_viewlist = new concurrent_unordered_set<int>(*other.m_viewlist);
 	}
-	~Player();
+	virtual ~Player() override;
 
 	void initialize(SOCKET sock);
 	void asynRecv();

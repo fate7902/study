@@ -22,8 +22,10 @@
 using namespace sf;
 
 #include <iostream>
+#include <concurrent_unordered_map.h>
 #include "..\..\SIM SERVER\Project1\packetInfo.h"
 using namespace std;
+using namespace concurrency;
 
 constexpr auto SCREENWIDTH = 9;
 constexpr auto SCREENHEIGHT = 9;
@@ -34,3 +36,4 @@ constexpr auto WINDOWHEIGHT = TILEHEIGHT * SCREENHEIGHT + 10;
 constexpr auto MAXUSER = 5000;
 
 enum class MOVETYPE { UP, DOWN, LEFT, RIGHT };
+enum class MONSTERTYPE { EASY, NORMAL, HARD };

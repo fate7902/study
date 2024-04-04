@@ -17,11 +17,15 @@ void Object::setHP(int val, int op)
 	}
 }
 
+void Object::setZone()
+{
+	m_zone = m_x.load() / ZONESIZE + (m_y.load() / ZONESIZE) * (MAPWIDTH / ZONESIZE);
+}
+
 void Object::setPosition(int x, int y)
 {
 	m_x.store(x);
 	m_y.store(y);
-	m_zone = x / ZONESIZE + (y / ZONESIZE) * (MAPWIDTH / ZONESIZE);
 }
 
 void Object::setPosition(MOVETYPE movetype)

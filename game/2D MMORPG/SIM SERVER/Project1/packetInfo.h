@@ -4,7 +4,7 @@
 #pragma once
 
 // I/O 타입 열거형
-enum class OVERTYPE { ACCEPT, SEND, RECV };
+enum class OVERTYPE { ACCEPT, SEND, RECV, MONSTERACTIVE, MONSTERRESPAWN, MONSTERATTACK };
 
 // server -> client packetType
 constexpr int SC_LOGIN_ALLOW = 1;
@@ -37,6 +37,7 @@ struct SC_MOVE_ALLOW_PACKET {
 struct SC_ADDOBJECT_ALLOW_PACKET {
 	unsigned char size;
 	char type;
+	int monsterType;
 	int x, y;
 	int id;
 };

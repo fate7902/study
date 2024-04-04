@@ -3,6 +3,12 @@
 
 extern int g_x, g_y;
 
+Network::~Network()
+{
+	delete[] m_otherPlayer;
+	delete[] m_monster;
+}
+
 void Network::initialize()
 {
 	m_status = m_socket.connect(SERVERIP, PORT);
@@ -90,6 +96,7 @@ void Network::processPacket(char* processedPacket)
 		SC_LOGIN_ALLOW_PACKET* p = reinterpret_cast<SC_LOGIN_ALLOW_PACKET*>(processedPacket);
 		m_player.setPosition(p->x, p->y);
 		m_player.m_showing = true;
+		m_player.m_id = p->id;
 		m_id = p->id;
 		g_x = m_player.m_x - 4;
 		g_y = m_player.m_y - 4;
@@ -104,8 +111,11 @@ void Network::processPacket(char* processedPacket)
 			g_x = m_player.m_x - 4;
 			g_y = m_player.m_y - 4;
 		}
-		else {
+		else if(p->id < MAXUSER){
 			m_otherPlayer[p->id].setPosition(p->x, p->y);
+		}
+		else {
+			(*m_monster)[p->id].setPosition(p->x, p->y);
 		}
 	}
 	break;
@@ -113,15 +123,35 @@ void Network::processPacket(char* processedPacket)
 	{
 		cout << "오브젝트 추가\n";
 		SC_ADDOBJECT_ALLOW_PACKET* p = reinterpret_cast<SC_ADDOBJECT_ALLOW_PACKET*>(processedPacket);
-		m_otherPlayer[p->id].setPosition(p->x, p->y);
-		m_otherPlayer[p->id].m_showing = true;
+		if (p->id < MAXUSER) {
+			m_otherPlayer[p->id].setPosition(p->x, p->y);
+			m_otherPlayer[p->id].m_id = p->id;
+			m_otherPlayer[p->id].m_showing = true;
+		}
+		else {
+			Texture monsterTexture;
+			monsterTexture.loadFromFile("monster.png");
+			Monster newMonster = Monster(monsterTexture, 0, 0, 10, 10);
+			newMonster.setScale(1.f, 1.f);
+			newMonster.setScale(1.f, 1.f);
+			m_monster->insert(make_pair(p->id, Monster()));
+			(*m_monster)[p->id].setPosition(p->x, p->y);
+			(*m_monster)[p->id].m_id = p->id;
+			(*m_monster)[p->id].m_type = static_cast<MONSTERTYPE>(p->monsterType);
+			(*m_monster)[p->id].m_showing = true;
+		}
 	}
 	break;
 	case SC_DELETEOBJECT_ALLOW:
 	{
 		cout << "오브젝트 삭제\n";
 		SC_DELETEOBJECT_ALLOW_PACKET* p = reinterpret_cast<SC_DELETEOBJECT_ALLOW_PACKET*>(processedPacket);
-		m_otherPlayer[p->id].m_showing = false;
+		if (p->id < MAXUSER) {
+			m_otherPlayer[p->id].m_showing = false;
+		}
+		else {
+			m_monster->unsafe_erase(p->id);
+		}
 	}
 	break;
 	default: break;

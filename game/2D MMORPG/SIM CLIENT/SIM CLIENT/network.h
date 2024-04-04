@@ -1,5 +1,8 @@
 #pragma once
+#include "stdafx.h"
 #include "player.h"
+#include "monster.h"
+
 constexpr int PORT = 4000;
 constexpr auto SERVERIP = "127.0.0.1";
 constexpr int BUF = 256;
@@ -7,16 +10,17 @@ constexpr int BUF = 256;
 class Network
 {
 public:
-	TcpSocket			m_socket;
-	Socket::Status		m_status;
+	TcpSocket									m_socket;
+	Socket::Status								m_status;
 
-	Player				m_player;
-	Player*				m_otherPlayer;
-	int					m_id;
+	Player										m_player;
+	int											m_id;
+	Player*										m_otherPlayer;
+	concurrent_unordered_map<int, Monster>*		m_monster;
 
 public:
 	Network() = default;
-	~Network() = default;
+	~Network();
 
 	void initialize();
 	void sendPacket(void* packet);

@@ -15,6 +15,7 @@ public:
 	WSABUF				m_wsaBuf;
 	char				m_sendBuf[BUFSIZE];
 	OVERTYPE			m_overType;
+	int					m_activeID;
 
 public:
 	ExtendedOverlapped();
