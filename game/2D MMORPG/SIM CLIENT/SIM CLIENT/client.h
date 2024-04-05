@@ -8,7 +8,7 @@ class Client
 {
 public:
 	Texture*			m_terrainTexture;
-	Texture*			m_characterTexture;
+	Texture*			m_characterTexture;	
 
 	Terrain				m_terrainSand, m_terrainStone;
 

@@ -29,6 +29,8 @@ using namespace concurrency;
 
 constexpr auto SCREENWIDTH = 9;
 constexpr auto SCREENHEIGHT = 9;
+constexpr auto MAPWIDTH = 2000;
+constexpr auto MAPHEIGHT = 2000;
 constexpr auto TILEWIDTH = 50;
 constexpr auto TILEHEIGHT = 50;
 constexpr auto WINDOWWIDTH = TILEWIDTH * SCREENWIDTH + 10;

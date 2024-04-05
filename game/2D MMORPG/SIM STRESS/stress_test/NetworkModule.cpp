@@ -301,6 +301,7 @@ void Adjust_Number_Of_Client()
 	//sprintf_s(l_packet.name, "%d¹ø", temp);
 	l_packet.size = sizeof(l_packet);	
 	l_packet.type = CS_LOGIN_REQUEST;
+	l_packet.clientTime = static_cast<unsigned>(duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count());
 	SendPacket(num_connections, &l_packet);
 
 

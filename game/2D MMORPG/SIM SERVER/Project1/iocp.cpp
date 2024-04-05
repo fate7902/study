@@ -1,10 +1,14 @@
 #include "stdafx.h"
 #include "iocp.h"
 
+Iocp::~Iocp()
+{
+	delete m_availableID;
+}
+
 void Iocp::initialize()
 {	
 	cout << "[Loading] Iocp::initialize()\n";
-	m_bZone = new atomic<bool>[ZONE];
 	m_availableID = new concurrent_queue<int>;
 	for (int i = 1; i <= MAXUSER; i++) m_availableID->push(i);
 
@@ -21,6 +25,7 @@ void Iocp::initialize()
 	for (auto& th : workerThreads)
 		th.join();
 	timerThread.join();
+	cout << "[Finished] Iocp::initialize()\n";
 }
 
 int Iocp::getIDAssignment()
@@ -35,8 +40,7 @@ void Iocp::disconnect(int key)
 	int zone = (*m_objectManager.m_player)[key].m_zone;
 	m_objectManager.m_zoneMutex[zone].lock();
 	m_objectManager.m_zone[zone].unsafe_erase(key);
-	m_objectManager.m_zoneMutex[zone].unlock();
-	delete &(*m_objectManager.m_player)[key];
+	m_objectManager.m_zoneMutex[zone].unlock();	
 
 	concurrent_unordered_set<int>* oldlist = (*m_objectManager.m_player)[key].m_viewlist;
 	for (const auto& id : *oldlist) {
@@ -78,13 +82,13 @@ void Iocp::timerWorker()
 {
 	while (true) {
 		TIMER timer;
-		if (!m_timer.empty()) {
-			m_timer.try_pop(timer);
+		if (!m_objectManager.m_timer.empty()) {
+			m_objectManager.m_timer.try_pop(timer);
 			if (timer.actTime <= system_clock::now()) {
 				processTimer(timer);
 			}
 			else {
-				m_timer.push(timer);
+				m_objectManager.m_timer.push(timer);
 				this_thread::sleep_for(10ms);
 			}
 		}
@@ -133,11 +137,11 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 			(*m_objectManager.m_player)[assignmentID].initialize(m_clientSock);			
 			CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_clientSock), m_iocpHandle, assignmentID, 0);
 			(*m_objectManager.m_player)[assignmentID].asynRecv();
-			m_clientSock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 		}
 		else {
 			cout << "접속 한계로인한 접속 불가.\n";
 		}
+		m_clientSock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 		ZeroMemory(&m_extOver.m_wsaOver, sizeof(m_extOver.m_wsaOver));		
 		m_addrSize = sizeof(SOCKADDR_IN);
 		AcceptEx(m_serverSock, m_clientSock, m_extOver.m_sendBuf, 0, m_addrSize + 16, m_addrSize + 16, 0, &m_extOver.m_wsaOver);
@@ -171,18 +175,21 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 	{
 		if (len == 0) {
 			disconnect(key);
+			delete extOver;
 			break;
 		}
 	}
 	break;
 	case OVERTYPE::MONSTERACTIVE: 
 	{
-		// 루아 스크립트 사용하여 몬스터 이동 구현 필요
-		lua_State* L = (*m_objectManager.m_monster)[key].m_luaState;
+		// 루아 스크립트 사용하여 몬스터 이동 구현
+		int monsterSpecies = static_cast<int>((*m_objectManager.m_monster)[key].m_monsterType);
+		lua_State* L = m_objectManager.m_luaState[monsterSpecies];
+		m_objectManager.m_luaMutex[monsterSpecies].lock();
 		switch ((*m_objectManager.m_monster)[key].m_monsterState) {
 		case MONSTERSTATE::IDLE:
 		{
-			// 방황이동 구현 필요
+			// 방황이동
 			lua_getglobal(L, "randomMove");
 			lua_pushinteger(L, (*m_objectManager.m_monster)[key].m_x.load());
 			lua_pushinteger(L, (*m_objectManager.m_monster)[key].m_y.load());
@@ -195,7 +202,6 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 				lua_pop(L, 2);
 				(*m_objectManager.m_monster)[key].setPosition(nextX, nextY);
 				(*m_objectManager.m_monster)[key].setZone();
-				m_objectManager.checkMonsterZone((*m_objectManager.m_monster)[key].m_zone, key);
 			}
 		}
 		break;
@@ -216,35 +222,20 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 				lua_pop(L, 2);
 				(*m_objectManager.m_monster)[key].setPosition(nextX, nextY);
 				(*m_objectManager.m_monster)[key].setZone();
-				m_objectManager.checkMonsterZone((*m_objectManager.m_monster)[key].m_zone, key);
 			}
-			double distance = m_objectManager.calcInRange((*m_objectManager.m_monster)[key], (*m_objectManager.m_player)[key]);
-			// 추적범위 벗어나면 통상 이동
-			if (distance > CHASERANGE * CHASERANGE) {
-				(*m_objectManager.m_monster)[key].m_monsterState = MONSTERSTATE::IDLE;
-				(*m_objectManager.m_monster)[key].m_targetID = -1;
-			}
-			// 공격범위 안에 들어오면 공격
-			/*
-			else if (distance < ATTACKRANGE * ATTACKRANGE) {
-				TIMER timer;
-				timer.activeID = key;
-				timer.eventType = EVENTTYPE::ATTACK;
-				timer.actTime = system_clock::now() + 1000ms;
-				m_timer.push(timer);
-				break;
-			}
-			*/
 		}
 		break;
 		}
+		m_objectManager.m_luaMutex[monsterSpecies].unlock();
+		m_objectManager.checkViewAtMonster((*m_objectManager.m_monster)[key].m_zone, key);
 
 		// 이동처리 후 다시 이동 타이머 셋팅
+		// 추적중인 몬스터가 추적대상과의 거리가 공격범위 안이면 공격 타이머 셋팅 필요
 		TIMER timer;
 		timer.activeID = key;
 		timer.eventType = EVENTTYPE::ACTIVE;
 		timer.actTime = system_clock::now() + 1000ms;
-		m_timer.push(timer);
+		m_objectManager.m_timer.push(timer);
 	}
 	break;
 	case OVERTYPE::MONSTERRESPAWN: 
@@ -252,24 +243,22 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 		int zoneNumber = (*m_objectManager.m_monster)[key].m_zone;
 		(*m_objectManager.m_monster)[key].m_monsterState = MONSTERSTATE::IDLE;
 		(*m_objectManager.m_monster)[key].m_targetID = -1;
-		// 존에 생성된 몬스터 정보 추가
-		m_objectManager.m_zone[zoneNumber].insert(key);
-		// 추가된 몬스터가 보이는 유저한테 몬스터 생성 패킷 전송
-		m_objectManager.checkMonsterZone(zoneNumber, key);
 
-		// 몬스터 타입에 따른 몬스터 이동 구현 필요
+		// 1. 존에 생성된 몬스터 정보 추가
+		m_objectManager.m_zone[zoneNumber].insert(key);
+		// 2. 생성된 위치를 기준으로 시야계산 및 추적대상 파악
+		m_objectManager.checkViewAtMonster(zoneNumber, key);
+
+		// 몬스터 타입에 따른 몬스터 이동
 		// EASY - 정지, 비선공 / NORMAL - 방황, 비선공 / HARD - 방황, 선공
 		MONSTERTYPE monsterType = (*m_objectManager.m_monster)[key].m_monsterType;
-		if (monsterType == MONSTERTYPE::HARD) {
-			if ((*m_objectManager.m_monster)[key].m_targetID != -1) {
-				(*m_objectManager.m_monster)[key].m_monsterState = MONSTERSTATE::CHASE;
-			}
-		}
-		TIMER timer;
-		timer.activeID = key;
-		timer.eventType = EVENTTYPE::ACTIVE;
-		timer.actTime = system_clock::now() + 1000ms;
-		m_timer.push(timer);
+		if (monsterType != MONSTERTYPE::EASY) {
+			TIMER timer;
+			timer.activeID = key;
+			timer.eventType = EVENTTYPE::ACTIVE;
+			timer.actTime = system_clock::now() + 1000ms;
+			m_objectManager.m_timer.push(timer);
+		}		
 	}
 	break;
 	case OVERTYPE::MONSTERATTACK:
@@ -278,8 +267,7 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 	}
 	break;
 	default: cout << "[Unknowed Packet Error] check the over Type of packet. \n"; break;
-	}
-	delete extOver;
+	}	
 }
 
 void Iocp::processPacket(char* packet, int key)
@@ -296,12 +284,10 @@ void Iocp::processPacket(char* packet, int key)
 		m_objectManager.m_zone[zoneNumber].insert(key);
 		(*m_objectManager.m_player)[key].sendLoginAllowPacket();
 
-		// 접속한 유저와 유저, 유저와 몬스터의 시야처리
-		// 자신이 속한 zone과 그 주위의 zone만 처리
-		m_objectManager.checkPlayerZone(zoneNumber, key);
-
-		// 유저가 생성된 존이 해당 유저가 처음 방문하는 경우 몬스터 생성
-		checkFirstVisitZone(zoneNumber);
+		// 1. 유저가 생성된 존이 해당 유저가 처음 방문하는 경우 몬스터 생성
+		m_objectManager.checkFirstVisitZone(zoneNumber);
+		// 2. 생성된 위치를 기준으로 시야계산
+		m_objectManager.checkViewAtPlayer(zoneNumber, key, p->clientTime);
 	}
 	break;
 	case CS_MOVE_REQUEST:
@@ -311,25 +297,19 @@ void Iocp::processPacket(char* packet, int key)
 		(*m_objectManager.m_player)[key].setPosition(static_cast<MOVETYPE>(p->moveType));		
 		(*m_objectManager.m_player)[key].sendMoveAllowPacket((*m_objectManager.m_player)[key], p->clientTime);
 
-		// 유저의 이동으로 인한 시야변화처리
-		// 1. 이동한 유저의 zone 변화 확인
 		int newZone = (*m_objectManager.m_player)[key].m_x.load() / ZONESIZE + ((*m_objectManager.m_player)[key].m_y.load() / ZONESIZE) * (MAPWIDTH / ZONESIZE);
+		// 1. 이동한 유저의 zone 변화 확인
 		m_objectManager.changeZone(newZone, key);
-
-		// 2. 기존의 viewlist에 있던 오브젝트와 시야 재확인
-		m_objectManager.checkViewlist(key, p->clientTime);
-
-		// 3. 접속시와 마찬가지로 주위 zone을 포함하여 새로 보이는 유저 및 몬스터 확인
-		m_objectManager.checkPlayerZone(newZone, key);
-		
-		// 유저가 이동한 존이 해당 유저가 처음 방문하는 경우 몬스터 생성
-		checkFirstVisitZone(newZone);
+		// 2. 유저가 이동한 존이 해당 유저가 처음 방문하는 경우 몬스터 생성
+		m_objectManager.checkFirstVisitZone(newZone);
+		// 3. 이동한 결과를 바탕으로 시야계산
+		m_objectManager.checkViewAtPlayer(newZone, key, p->clientTime);	
 	}
 	break;
 	default: break;
 	}
 }
-
+/*
 void Iocp::checkFirstVisitZone(int zoneNumber)
 {
 	bool expected = false;
@@ -344,3 +324,4 @@ void Iocp::checkFirstVisitZone(int zoneNumber)
 		}
 	}
 }
+*/

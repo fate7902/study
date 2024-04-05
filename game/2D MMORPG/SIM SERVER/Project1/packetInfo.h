@@ -52,6 +52,7 @@ struct SC_DELETEOBJECT_ALLOW_PACKET {
 struct CS_LOGIN_REQUEST_PACKET {
 	unsigned char size;
 	char type;
+	unsigned clientTime;
 };
 
 struct CS_MOVE_REQUEST_PACKET {

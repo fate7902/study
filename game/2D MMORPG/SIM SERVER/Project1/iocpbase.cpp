@@ -36,6 +36,7 @@ void IocpBase::initialize()
 	m_addrSize = sizeof(m_clientAddr);
 	m_iocpHandle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
 	CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_serverSock), m_iocpHandle, 9999, 0);
+	cout << "[Finished] IocpBase::initialize()\n";
 }
 
 void IocpBase::errorDisplay(const char* msg, int err_no)

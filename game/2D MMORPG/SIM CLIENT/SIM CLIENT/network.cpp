@@ -6,7 +6,8 @@ extern int g_x, g_y;
 Network::~Network()
 {
 	delete[] m_otherPlayer;
-	delete[] m_monster;
+	delete m_monster;
+	delete m_monsterTexture;
 }
 
 void Network::initialize()
@@ -17,6 +18,7 @@ void Network::initialize()
 		cout << "서버와 연결할 수 없습니다.\n";
 		while (true);
 	}
+	m_monster = new concurrent_unordered_map<int, Monster>;
 	sendLogin();
 }
 
@@ -104,7 +106,7 @@ void Network::processPacket(char* processedPacket)
 	break;
 	case SC_MOVE_ALLOW:
 	{
-		cout << "이동 성공\n";
+		//cout << "이동 성공\n";
 		SC_MOVE_ALLOW_PACKET* p = reinterpret_cast<SC_MOVE_ALLOW_PACKET*>(processedPacket);
 		if (m_id == p->id) {
 			m_player.setPosition(p->x, p->y);
@@ -121,7 +123,7 @@ void Network::processPacket(char* processedPacket)
 	break;
 	case SC_ADDOBJECT_ALLOW:
 	{
-		cout << "오브젝트 추가\n";
+		//cout << "오브젝트 추가\n";
 		SC_ADDOBJECT_ALLOW_PACKET* p = reinterpret_cast<SC_ADDOBJECT_ALLOW_PACKET*>(processedPacket);
 		if (p->id < MAXUSER) {
 			m_otherPlayer[p->id].setPosition(p->x, p->y);
@@ -129,12 +131,13 @@ void Network::processPacket(char* processedPacket)
 			m_otherPlayer[p->id].m_showing = true;
 		}
 		else {
-			Texture monsterTexture;
-			monsterTexture.loadFromFile("monster.png");
-			Monster newMonster = Monster(monsterTexture, 0, 0, 10, 10);
-			newMonster.setScale(1.f, 1.f);
-			newMonster.setScale(1.f, 1.f);
-			m_monster->insert(make_pair(p->id, Monster()));
+			switch (static_cast<MONSTERTYPE>(p->monsterType))
+			{
+			case MONSTERTYPE::EASY: m_monster->insert(make_pair(p->id, Monster(*m_monsterTexture, 46, 66, 96, 90))); break;
+			case MONSTERTYPE::NORMAL: m_monster->insert(make_pair(p->id, Monster(*m_monsterTexture, 142, 66, 100, 90))); break;
+			case MONSTERTYPE::HARD: m_monster->insert(make_pair(p->id, Monster(*m_monsterTexture, 242, 66, 98, 90))); break;
+			}
+			(*m_monster)[p->id].setScale(0.5f, 0.5f);
 			(*m_monster)[p->id].setPosition(p->x, p->y);
 			(*m_monster)[p->id].m_id = p->id;
 			(*m_monster)[p->id].m_type = static_cast<MONSTERTYPE>(p->monsterType);
@@ -144,7 +147,7 @@ void Network::processPacket(char* processedPacket)
 	break;
 	case SC_DELETEOBJECT_ALLOW:
 	{
-		cout << "오브젝트 삭제\n";
+		//cout << "오브젝트 삭제\n";
 		SC_DELETEOBJECT_ALLOW_PACKET* p = reinterpret_cast<SC_DELETEOBJECT_ALLOW_PACKET*>(processedPacket);
 		if (p->id < MAXUSER) {
 			m_otherPlayer[p->id].m_showing = false;

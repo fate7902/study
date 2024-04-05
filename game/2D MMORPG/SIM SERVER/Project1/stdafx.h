@@ -43,8 +43,19 @@ constexpr int ZONESIZE = 50;
 constexpr int ZONE = MAPWIDTH / ZONESIZE * MAPHEIGHT / ZONESIZE;
 constexpr int MAXUSER = 5000;
 constexpr int MAXMONSTER = 200000;
+constexpr int MAXMONSTERSPECIES = 3;
 
 enum class MOVETYPE { UP, DOWN, LEFT, RIGHT };
 enum class MONSTERTYPE { EASY, NORMAL, HARD };
 enum class MONSTERSTATE { NONE, IDLE, CHASE, RETURN };
 enum class EVENTTYPE { ACTIVE, RESPAWN, ATTACK };
+
+struct TIMER {
+	int							activeID;
+	EVENTTYPE					eventType;
+	system_clock::time_point	actTime;
+
+	bool operator<(const TIMER& other) const {
+		return actTime > other.actTime;
+	}
+};

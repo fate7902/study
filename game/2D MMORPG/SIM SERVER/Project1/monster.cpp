@@ -3,17 +3,10 @@
 
 Monster::Monster()
 {
-	m_luaState = luaL_newstate();
-	luaL_openlibs(m_luaState);
-	luaL_dofile(m_luaState, "monster.lua");
-	if (luaL_loadfile(m_luaState, "monster.lua") || lua_pcall(m_luaState, 0, 0, 0)) {
-		cout << "[1루아스크립트 오류] " << lua_tostring(m_luaState, -1) << "\n";
-	}
 }
 
 Monster::~Monster()
 {
-	lua_close(m_luaState);
 }
 
 void Monster::initialize()

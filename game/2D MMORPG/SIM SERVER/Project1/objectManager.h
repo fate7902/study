@@ -16,6 +16,12 @@ public:
 	concurrent_unordered_set<int>*			m_zone;
 	mutex*									m_zoneMutex;
 
+	lua_State*								m_luaState[MAXMONSTERSPECIES];
+	mutex*									m_luaMutex;
+
+	concurrent_priority_queue<TIMER>		m_timer;
+	atomic<bool>*							m_bZone;
+
 public:
 	ObjectManager();
 	~ObjectManager();
@@ -29,18 +35,15 @@ public:
 	// 구역 변화 적용
 	void changeZone(int zoneNumber, int key);
 
-	// 소지중인 뷰리스트를 바탕으로 시야처리
-	// 플레이어 이동 후 시야에서 사라지거나 자신의 이동을 알리기위한 함수
-	void checkViewlist(int key, unsigned time);
+	// 넘겨받은 유저키값(key)과 유저 위치 구역(zone)을 기준으로 주변 오브젝트와의 시야파악
+	void checkViewAtPlayer(int zoneNumber, int key, unsigned time);
 
-	// 플레이어를 기준으로 주변 구역 확인
-	// 플레이어, 몬스터 정보 전송
-	// 플레이어 이동 후 시야내에 새로 보이는 오브젝트를 찾기위한 함수
-	void checkPlayerZone(int zoneNumber, int key);
+	// 넘겨받은 몬스터키값(key)과 몬스터 위치 구역(zone)을 기준으로 주변 플레이어와의 시야파악
+	// 몬스터 타입이 HARD이면서 IDLE인 상태인경우 추적대상이 있는지 함께 검사
+	// 몬스터 상태가 추적중이면 추적대상이 추적거리 이내인지 재검사 실행
+	void checkViewAtMonster(int zoneNumber, int key);
 
-	// 몬스터를 기준으로 주변구역 확인
-	// 몬스터 정보만 전송
-	// 몬스터 이동 후 타겟을 정하기 위한 함수
-	void checkMonsterZone(int zoneNumber, int key);
+	// 해당 구역을 처음 방문하는 지 확인후 몬스터 생성
+	void checkFirstVisitZone(int zoneNumber);
 };
 

@@ -17,6 +17,7 @@ public:
 	int											m_id;
 	Player*										m_otherPlayer;
 	concurrent_unordered_map<int, Monster>*		m_monster;
+	Texture*									m_monsterTexture;
 
 public:
 	Network() = default;

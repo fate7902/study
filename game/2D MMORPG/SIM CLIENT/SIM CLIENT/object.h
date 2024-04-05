@@ -11,6 +11,9 @@ public:
 public:
 	Object() = default;
 	Object(Texture& texture, int left, int top, int width, int height);
+	Object(const Object& other) : m_sprite(other.m_sprite),
+		m_x(other.m_x), m_y(other.m_y),
+		m_id(other.m_id), m_showing(other.m_showing) {}
 	virtual ~Object() = default;
 
 	void setPosition(int x, int y);

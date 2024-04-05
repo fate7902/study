@@ -13,21 +13,20 @@ Client::Client()
 	m_terrainStone.setScale(1.f, 1.2f);
 
 	m_characterTexture = new Texture;
-	//m_characterTexture->loadFromFile("character.png");	
-	//m_network.m_player = Player(*m_characterTexture, 60, 290, 175, 195);
-	//m_network.m_player.setScale(0.3f, 0.23f);
-	//m_network.m_player.setPosition(0, 0);
-	m_characterTexture->loadFromFile("monster.png");	
-	m_network.m_player = Player(*m_characterTexture, 0, 0, 50, 50);
-	m_network.m_player.setScale(1.f, 1.f);
-	m_network.m_player.setPosition(0, 0);
+	m_characterTexture->loadFromFile("character.png");	
+	m_network.m_player = Player(*m_characterTexture, 60, 290, 175, 195);
+	m_network.m_player.setScale(0.26f, 0.23f);
+	m_network.m_player.setPosition(0, 0);	
 	m_network.m_otherPlayer = new Player[MAXUSER];
 	for (int i = 0; i < MAXUSER; ++i) {
 		m_network.m_otherPlayer[i] = Player(*m_characterTexture, 235, 290, 175, 195);
-		m_network.m_otherPlayer[i].setScale(0.3f, 0.23f);
+		m_network.m_otherPlayer[i].setScale(0.26f, 0.23f);
 		m_network.m_otherPlayer[i].setPosition(0, 0);
 		m_network.m_otherPlayer[i].m_showing = false;
 	}
+
+	m_network.m_monsterTexture = new Texture;
+	m_network.m_monsterTexture->loadFromFile("monster.png");
 }
 
 Client::~Client()
@@ -46,7 +45,7 @@ void Client::rendering(RenderWindow& window)
 		for (int j = 0; j < SCREENHEIGHT; ++j) {
 			int tileX = i + g_x;
 			int tileY = j + g_y;
-			if ((tileX < 0) || (tileY < 0)) continue;
+			if ((tileX < 0) || (tileY < 0) || (tileX >= MAPWIDTH) || (tileY >= MAPHEIGHT)) continue;
 			if (((tileX + tileY) % 6) < 3) {
 				m_terrainSand.setPosition(TILEWIDTH * i + 7, TILEHEIGHT * j + 7);
 				m_terrainSand.draw(window);
@@ -64,6 +63,9 @@ void Client::rendering(RenderWindow& window)
 		if (m_network.m_otherPlayer[i].m_showing) {
 			m_network.m_otherPlayer[i].draw(window);
 		}
+	}
+	for (auto& item : *m_network.m_monster) {
+		item.second.draw(window);
 	}
 	m_network.m_player.draw(window);
 }

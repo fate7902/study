@@ -65,7 +65,7 @@ void Player::sendAddObjectPacket(Object& obj)
 	p.x = obj.m_x.load();
 	p.y = obj.m_y.load();
 	p.id = obj.m_id;
-	if (p.id > MAXUSER) {
+	if (p.id >= MAXUSER) {
 		Monster* monster = dynamic_cast<Monster*>(&obj);
 		p.monsterType = static_cast<int>(monster->m_monsterType);
 	}
