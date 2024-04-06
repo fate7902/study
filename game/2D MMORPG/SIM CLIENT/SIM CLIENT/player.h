@@ -4,6 +4,9 @@
 class Player : public Object
 {
 public:
+	int				m_exp;
+	int				m_lv;
+public:
 	Player() = default;
 	Player(Texture& texture, int left, int top, int width, int height)
 		: Object(texture, left, top, width, height) {}

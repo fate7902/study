@@ -22,6 +22,9 @@
 #include <mutex>
 #include <chrono>
 
+// DB관련 헤더
+#include <sqlext.h>
+
 // 루아 스크립트 관련
 extern "C" {
 #include "include/lua.h"
@@ -49,6 +52,7 @@ enum class MOVETYPE { UP, DOWN, LEFT, RIGHT };
 enum class MONSTERTYPE { EASY, NORMAL, HARD };
 enum class MONSTERSTATE { NONE, IDLE, CHASE, RETURN };
 enum class EVENTTYPE { ACTIVE, RESPAWN, ATTACK };
+enum class DBREQUESTTYPE { SAVE };
 
 struct TIMER {
 	int							activeID;
@@ -56,6 +60,27 @@ struct TIMER {
 	system_clock::time_point	actTime;
 
 	bool operator<(const TIMER& other) const {
+		return actTime > other.actTime;
+	}
+};
+
+struct CHARACTERINFO {
+	string						ID;
+	string						PW;
+	int							x, y;
+	int							lv;
+	int							exp;
+	int							hp;
+};
+
+struct DBREQUEST {
+	int							requestID;
+	DBREQUESTTYPE				requestType;
+	system_clock::time_point	actTime;
+	bool						bCompulsory;
+	CHARACTERINFO				characterInfo;
+
+	bool operator<(const DBREQUEST& other) const {
 		return actTime > other.actTime;
 	}
 };

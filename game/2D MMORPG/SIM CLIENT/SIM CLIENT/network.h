@@ -15,6 +15,7 @@ public:
 
 	Player										m_player;
 	int											m_id;
+	string										m_ID, m_PW;
 	Player*										m_otherPlayer;
 	concurrent_unordered_map<int, Monster>*		m_monster;
 	Texture*									m_monsterTexture;

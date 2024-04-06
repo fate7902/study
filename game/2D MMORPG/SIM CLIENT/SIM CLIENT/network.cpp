@@ -36,6 +36,11 @@ void Network::sendLogin()
 	CS_LOGIN_REQUEST_PACKET p;
 	p.size = sizeof(CS_LOGIN_REQUEST_PACKET);
 	p.type = CS_LOGIN_REQUEST;
+	char ID[MAXIDLEN], PW[MAXPWLEN];
+	cout << "아이디 : ";
+	cin.getline(p.ID, MAXIDLEN);
+	cout << "비밀번호 : ";
+	cin.getline(p.PW, MAXPWLEN);
 	sendPacket(&p);
 }
 
@@ -93,31 +98,30 @@ void Network::processPacket(char* processedPacket)
 	{
 	// 패킷 처리
 	case SC_LOGIN_ALLOW:
-	{
-		cout << "로그인 성공\n";
+	{		
 		SC_LOGIN_ALLOW_PACKET* p = reinterpret_cast<SC_LOGIN_ALLOW_PACKET*>(processedPacket);
+		if (p->loginResult == static_cast<int>(LOGINRESULT::FAILED)) exit(1);
 		m_player.setPosition(p->x, p->y);
 		m_player.m_showing = true;
-		m_player.m_id = p->id;
-		m_id = p->id;
+		m_player.m_id = p->key;
+		m_id = p->key;
 		g_x = m_player.m_x - 4;
 		g_y = m_player.m_y - 4;
 	}
 	break;
 	case SC_MOVE_ALLOW:
-	{
-		//cout << "이동 성공\n";
+	{		
 		SC_MOVE_ALLOW_PACKET* p = reinterpret_cast<SC_MOVE_ALLOW_PACKET*>(processedPacket);
-		if (m_id == p->id) {
+		if (m_id == p->key) {
 			m_player.setPosition(p->x, p->y);
 			g_x = m_player.m_x - 4;
 			g_y = m_player.m_y - 4;
 		}
-		else if(p->id < MAXUSER){
-			m_otherPlayer[p->id].setPosition(p->x, p->y);
+		else if(p->key < MAXUSER){
+			m_otherPlayer[p->key].setPosition(p->x, p->y);
 		}
 		else {
-			(*m_monster)[p->id].setPosition(p->x, p->y);
+			(*m_monster)[p->key].setPosition(p->x, p->y);
 		}
 	}
 	break;
@@ -125,23 +129,23 @@ void Network::processPacket(char* processedPacket)
 	{
 		//cout << "오브젝트 추가\n";
 		SC_ADDOBJECT_ALLOW_PACKET* p = reinterpret_cast<SC_ADDOBJECT_ALLOW_PACKET*>(processedPacket);
-		if (p->id < MAXUSER) {
-			m_otherPlayer[p->id].setPosition(p->x, p->y);
-			m_otherPlayer[p->id].m_id = p->id;
-			m_otherPlayer[p->id].m_showing = true;
+		if (p->key < MAXUSER) {
+			m_otherPlayer[p->key].setPosition(p->x, p->y);
+			m_otherPlayer[p->key].m_id = p->key;
+			m_otherPlayer[p->key].m_showing = true;
 		}
 		else {
 			switch (static_cast<MONSTERTYPE>(p->monsterType))
 			{
-			case MONSTERTYPE::EASY: m_monster->insert(make_pair(p->id, Monster(*m_monsterTexture, 46, 66, 96, 90))); break;
-			case MONSTERTYPE::NORMAL: m_monster->insert(make_pair(p->id, Monster(*m_monsterTexture, 142, 66, 100, 90))); break;
-			case MONSTERTYPE::HARD: m_monster->insert(make_pair(p->id, Monster(*m_monsterTexture, 242, 66, 98, 90))); break;
+			case MONSTERTYPE::EASY: m_monster->insert(make_pair(p->key, Monster(*m_monsterTexture, 46, 66, 96, 90))); break;
+			case MONSTERTYPE::NORMAL: m_monster->insert(make_pair(p->key, Monster(*m_monsterTexture, 142, 66, 100, 90))); break;
+			case MONSTERTYPE::HARD: m_monster->insert(make_pair(p->key, Monster(*m_monsterTexture, 242, 66, 98, 90))); break;
 			}
-			(*m_monster)[p->id].setScale(0.5f, 0.5f);
-			(*m_monster)[p->id].setPosition(p->x, p->y);
-			(*m_monster)[p->id].m_id = p->id;
-			(*m_monster)[p->id].m_type = static_cast<MONSTERTYPE>(p->monsterType);
-			(*m_monster)[p->id].m_showing = true;
+			(*m_monster)[p->key].setScale(0.5f, 0.5f);
+			(*m_monster)[p->key].setPosition(p->x, p->y);
+			(*m_monster)[p->key].m_id = p->key;
+			(*m_monster)[p->key].m_type = static_cast<MONSTERTYPE>(p->monsterType);
+			(*m_monster)[p->key].m_showing = true;
 		}
 	}
 	break;
@@ -149,11 +153,11 @@ void Network::processPacket(char* processedPacket)
 	{
 		//cout << "오브젝트 삭제\n";
 		SC_DELETEOBJECT_ALLOW_PACKET* p = reinterpret_cast<SC_DELETEOBJECT_ALLOW_PACKET*>(processedPacket);
-		if (p->id < MAXUSER) {
-			m_otherPlayer[p->id].m_showing = false;
+		if (p->key < MAXUSER) {
+			m_otherPlayer[p->key].m_showing = false;
 		}
 		else {
-			m_monster->unsafe_erase(p->id);
+			m_monster->unsafe_erase(p->key);
 		}
 	}
 	break;

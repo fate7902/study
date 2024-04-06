@@ -7,6 +7,7 @@
 #include "iocpbase.h"
 #include "extendedOverlapped.h"
 #include "objectManager.h"
+#include "database.h"
 
 constexpr int MAXTHREAD = 12;
 
@@ -16,6 +17,8 @@ private:
 	ExtendedOverlapped					m_extOver;
 	concurrent_queue<int>*				m_availableID;
 	ObjectManager						m_objectManager;
+	concurrent_queue<DBREQUEST>*		m_requestDB;
+	Database							m_DB;
 
 public:
 	Iocp() = default;
@@ -27,9 +30,11 @@ public:
 private:	
 	int getIDAssignment();
 	void disconnect(int key);
-	void worker();
 	void timerWorker();
 	void processTimer(TIMER timer);
+	void dbWorker();
+	void processDB(DBREQUEST dbRequest);
+	void worker();
 	void processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key);
 	void processPacket(char* packet, int key);
 };

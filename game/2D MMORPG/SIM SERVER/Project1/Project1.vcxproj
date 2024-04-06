@@ -152,6 +152,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="database.h" />
     <ClInclude Include="extendedOverlapped.h" />
     <ClInclude Include="iocp.h" />
     <ClInclude Include="iocpbase.h" />
@@ -163,6 +164,7 @@
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="database.cpp" />
     <ClCompile Include="extendedOverlapped.cpp" />
     <ClCompile Include="iocp.cpp" />
     <ClCompile Include="iocpbase.cpp" />

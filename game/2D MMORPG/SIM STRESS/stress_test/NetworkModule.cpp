@@ -122,8 +122,8 @@ void ProcessPacket(int ci, unsigned char packet[])
 	case SC_MOVE_ALLOW: 
 	{
 		SC_MOVE_ALLOW_PACKET* move_packet = reinterpret_cast<SC_MOVE_ALLOW_PACKET*>(packet);
-		if (move_packet->id < MAX_CLIENTS) {
-			int my_id = client_map[move_packet->id];
+		if (move_packet->key < MAX_CLIENTS) {
+			int my_id = client_map[move_packet->key];
 			if (-1 != my_id) {
 				g_clients[my_id].x = move_packet->x;
 				g_clients[my_id].y = move_packet->y;
@@ -147,8 +147,8 @@ void ProcessPacket(int ci, unsigned char packet[])
 		active_clients++;
 		SC_LOGIN_ALLOW_PACKET* login_packet = reinterpret_cast<SC_LOGIN_ALLOW_PACKET*>(packet);
 		int my_id = ci;
-		client_map[login_packet->id] = my_id;
-		g_clients[my_id].id = login_packet->id;
+		client_map[login_packet->key] = my_id;
+		g_clients[my_id].id = login_packet->key;
 		g_clients[my_id].x = login_packet->x;
 		g_clients[my_id].y = login_packet->y;
 		break;
@@ -295,12 +295,12 @@ void Adjust_Number_Of_Client()
 	DWORD recv_flag = 0;
 	CreateIoCompletionPort(reinterpret_cast<HANDLE>(g_clients[num_connections].client_socket), g_hiocp, num_connections, 0);
 
-	CS_LOGIN_REQUEST_PACKET l_packet;
+	CS_TESTLOGIN_REQUEST_PACKET l_packet;
 
 	//int temp = num_connections;
 	//sprintf_s(l_packet.name, "%d¹ø", temp);
 	l_packet.size = sizeof(l_packet);	
-	l_packet.type = CS_LOGIN_REQUEST;
+	l_packet.type = CS_TESTLOGIN_REQUEST;
 	l_packet.clientTime = static_cast<unsigned>(duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count());
 	SendPacket(num_connections, &l_packet);
 

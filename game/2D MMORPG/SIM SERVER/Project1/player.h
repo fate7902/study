@@ -13,6 +13,9 @@ public:
 	SOCKET							m_socket;
 	ExtendedOverlapped				m_recvOver;
 
+	string							m_ID, m_PW;
+	int								m_lv;
+
 public:
 	Player();
 	Player(int id, int hp) : Object(id, hp){
@@ -21,15 +24,17 @@ public:
 	Player(const Player& other)
 		: Object(other), m_exp(other.m_exp.load()),
 		m_reaminPacketData(other.m_reaminPacketData),
-		m_socket(other.m_socket), m_recvOver(other.m_recvOver) {
+		m_socket(other.m_socket), m_recvOver(other.m_recvOver),
+		m_ID(other.m_ID), m_PW(other.m_PW), m_lv(other.m_lv){
 		m_viewlist = new concurrent_unordered_set<int>(*other.m_viewlist);
 	}
 	virtual ~Player() override;
 
-	void initialize(SOCKET sock);
+	void initialize(CHARACTERINFO& characterInfo);
+	void setSocket(SOCKET sock);
 	void asynRecv();
 	void sendPacket(void* packet);
-	void sendLoginAllowPacket();
+	void sendLoginAllowPacket(LOGINRESULT loginResult);
 	void sendMoveAllowPacket(Object& obj, unsigned time);
 	void sendAddObjectPacket(Object& obj);
 	void sendDeleteObjectPacket(int id);

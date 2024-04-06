@@ -6,6 +6,7 @@ public:
 	Sprite			m_sprite;
 	int				m_x, m_y;
 	int				m_id;
+	int				m_hp;	
 	bool			m_showing;
 
 public:
