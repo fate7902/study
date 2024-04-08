@@ -171,8 +171,3 @@ void Database::saveData(CHARACTERINFO characterInfo)
         return;
     }    
 }
-
-void Database::test()
-{
-
-}

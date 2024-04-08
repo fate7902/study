@@ -9,8 +9,10 @@ constexpr int ATTACKRANGE = 1;
 class ObjectManager
 {
 public:
-	concurrent_unordered_map<int, Player>*	m_player;
+	concurrent_unordered_map<int, Player*>*	m_player;
 	mutex									m_playerMutex;
+	concurrent_unordered_map<int, Player*>* m_logoutPlayer;
+	mutex									m_logoutPlayerMutex;
 	concurrent_unordered_map<int, Monster>* m_monster;
 
 	concurrent_unordered_set<int>*			m_zone;

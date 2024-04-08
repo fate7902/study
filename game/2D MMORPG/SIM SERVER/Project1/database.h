@@ -16,6 +16,5 @@ public:
 
 	bool login(CHARACTERINFO& characterInfo);
 	void saveData(CHARACTERINFO characterInfo);
-	void test();
 };
 

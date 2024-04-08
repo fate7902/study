@@ -5,7 +5,7 @@ public:
 	atomic<int>			m_x, m_y;
 	atomic<int>			m_hp;
 	int					m_id;
-	int					m_zone;
+	int					m_zone{ -1 };
 
 public:
 	Object() = default;

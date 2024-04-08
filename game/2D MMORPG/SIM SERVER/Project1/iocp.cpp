@@ -12,7 +12,7 @@ void Iocp::initialize()
 	cout << "[Loading] Iocp::initialize()\n";
 	m_availableID = new concurrent_queue<int>;
 	m_requestDB = new concurrent_queue<DBREQUEST>;
-	for (int i = 1; i <= MAXUSER; i++) m_availableID->push(i);
+	for (int i = 0; i < MAXUSER; i++) m_availableID->push(i);
 
 	IocpBase::initialize();
 
@@ -41,24 +41,25 @@ int Iocp::getIDAssignment()
 
 void Iocp::disconnect(int key)
 {
-	int zone = (*m_objectManager.m_player)[key].m_zone;
+	int zone = (*(*m_objectManager.m_player)[key]).m_zone;
+	(*(*m_objectManager.m_player)[key]).m_zone = -1;
 	m_objectManager.m_zoneMutex[zone].lock();
 	m_objectManager.m_zone[zone].unsafe_erase(key);
 	m_objectManager.m_zoneMutex[zone].unlock();	
 
-	(*m_objectManager.m_player)[key].m_viewlistMutex.lock();
-	concurrent_unordered_set<int>* oldlist = (*m_objectManager.m_player)[key].m_viewlist;
-	(*m_objectManager.m_player)[key].m_viewlistMutex.unlock();
-	for (const auto& id : *oldlist) {		
-		(*m_objectManager.m_player)[id].m_viewlistMutex.lock();
-		(*m_objectManager.m_player)[id].m_viewlist->unsafe_erase(key);
-		(*m_objectManager.m_player)[id].m_viewlistMutex.unlock();
-		(*m_objectManager.m_player)[id].sendDeleteObjectPacket(key);
+	(*(*m_objectManager.m_player)[key]).m_viewlistMutex.lock();
+	concurrent_unordered_set<int>* oldlist = (*m_objectManager.m_player)[key]->m_viewlist;
+	(*(*m_objectManager.m_player)[key]).m_viewlistMutex.unlock();
+	for (const auto& id : *oldlist) {	
+		if (id >= MAXUSER) continue;
+		(*(*m_objectManager.m_player)[id]).m_viewlistMutex.lock();
+		(*(*m_objectManager.m_player)[id]).m_viewlist->unsafe_erase(key);
+		(*(*m_objectManager.m_player)[id]).m_viewlistMutex.unlock();
+		(*(*m_objectManager.m_player)[id]).sendDeleteObjectPacket(key);
 	}
 	cout << "Logout on client[" << key << "]\n";
 
-	m_objectManager.m_playerMutex.lock();
-	const Player& playerData = (*m_objectManager.m_player)[key];
+	const Player& playerData = (*(*m_objectManager.m_player)[key]);
 	CHARACTERINFO characterInfo{
 		playerData.m_ID,
 		playerData.m_PW,
@@ -68,10 +69,13 @@ void Iocp::disconnect(int key)
 		playerData.m_exp,
 		playerData.m_hp };
 	DBREQUEST dbRequest{ key, DBREQUESTTYPE::SAVE, system_clock::now(), true, characterInfo };
-	m_objectManager.m_player->unsafe_erase(key);
-	m_objectManager.m_playerMutex.unlock();
-	if(characterInfo.ID != "test") m_requestDB->push(dbRequest);
-	m_availableID->push(key);
+	if (characterInfo.ID != "test") m_requestDB->push(dbRequest);
+
+	TIMER timer;
+	timer.activeID = key;
+	timer.eventType = EVENTTYPE::LOGOUT;
+	timer.actTime = system_clock::now() + seconds(5);
+	m_objectManager.m_timer.push(timer);	
 }
 
 void Iocp::timerWorker()
@@ -115,6 +119,11 @@ void Iocp::processTimer(TIMER timer)
 		timerExtendedOver->m_overType = OVERTYPE::MONSTERATTACK;
 	}
 	break;
+	case EVENTTYPE::LOGOUT:
+	{
+		timerExtendedOver->m_overType = OVERTYPE::PLAYERLOGOUT;
+	}
+	break;
 	}
 	PostQueuedCompletionStatus(m_iocpHandle, 1, timer.activeID, &timerExtendedOver->m_wsaOver);
 }
@@ -150,7 +159,7 @@ void Iocp::processDB(DBREQUEST dbRequest)
 			CHARACTERINFO characterInfo;
 			m_objectManager.m_playerMutex.lock();
 			if (m_objectManager.m_player->find(dbRequest.requestID) != m_objectManager.m_player->end()) {
-				const Player& playerData = (*m_objectManager.m_player)[dbRequest.requestID];
+				const Player& playerData = (*(*m_objectManager.m_player)[dbRequest.requestID]);
 				characterInfo.ID = playerData.m_ID;
 				characterInfo.PW = playerData.m_PW;
 				characterInfo.x = playerData.m_x.load();
@@ -183,9 +192,9 @@ void Iocp::worker()
 			if (extOver->m_overType == OVERTYPE::ACCEPT) {
 			}
 			else {
-				disconnect(static_cast<int>(key));
 				if (extOver->m_overType == OVERTYPE::SEND)
 					delete extOver;
+				disconnect(static_cast<int>(key));
 				continue;
 			}
 		}
@@ -202,11 +211,11 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 	case OVERTYPE::ACCEPT:
 	{		
 		int assignmentID = getIDAssignment();
-		if (assignmentID != -1) {			
-			m_objectManager.m_player->insert(make_pair(assignmentID, Player(assignmentID, 100)));
-			(*m_objectManager.m_player)[assignmentID].setSocket(m_clientSock);
+		if (assignmentID != -1) {	
+			m_objectManager.m_player->insert(make_pair(assignmentID, new Player(assignmentID, 100)));
+			(*(*m_objectManager.m_player)[assignmentID]).setSocket(m_clientSock);
 			CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_clientSock), m_iocpHandle, assignmentID, 0);
-			(*m_objectManager.m_player)[assignmentID].asynRecv();
+			(*(*m_objectManager.m_player)[assignmentID]).asynRecv();
 		}
 		else {
 			cout << "[알림] 최대 접속인원 제한으로인한 접속 불가.\n";
@@ -223,7 +232,7 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 			disconnect(key);
 			break;
 		}
-		int remainPacketData = len + (*m_objectManager.m_player)[key].m_reaminPacketData;
+		int remainPacketData = len + (*(*m_objectManager.m_player)[key]).m_reaminPacketData;
 		char* p = extOver->m_sendBuf;
 		while (remainPacketData > 0) {
 			int packetSize = p[0];
@@ -234,24 +243,46 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 			}
 			else break;
 		}
-		(*m_objectManager.m_player)[key].m_reaminPacketData = remainPacketData;
+		(*(*m_objectManager.m_player)[key]).m_reaminPacketData = remainPacketData;
 		if (remainPacketData > 0) {
 			memcpy(extOver->m_sendBuf, p, remainPacketData);
 		}
-		(*m_objectManager.m_player)[key].asynRecv();
+		(*(*m_objectManager.m_player)[key]).asynRecv();
 	}
 	break;
 	case OVERTYPE::SEND:
 	{
+		delete extOver;
 		if (len == 0) {
-			disconnect(key);
-			delete extOver;
+			disconnect(key);			
 			break;
-		}
+		}		
+		//cout << "전송완료\n";
+	}
+	break;
+	case OVERTYPE::PLAYERLOGOUT:
+	{
+		m_objectManager.m_playerMutex.lock();
+		const Player& playerData = (*(*m_objectManager.m_player)[key]);
+		CHARACTERINFO characterInfo{
+			playerData.m_ID,
+			playerData.m_PW,
+			playerData.m_x,
+			playerData.m_y,
+			playerData.m_lv,
+			playerData.m_exp,
+			playerData.m_hp };
+		DBREQUEST dbRequest{ key, DBREQUESTTYPE::SAVE, system_clock::now(), true, characterInfo };
+		m_requestDB->push(dbRequest);
+		delete (*m_objectManager.m_player)[key];
+		m_objectManager.m_player->unsafe_erase(key);
+		m_objectManager.m_playerMutex.unlock();
+		m_availableID->push(key);
+		delete extOver;
 	}
 	break;
 	case OVERTYPE::MONSTERACTIVE: 
-	{
+	{		
 		// 루아 스크립트 사용하여 몬스터 이동 구현
 		int monsterSpecies = static_cast<int>((*m_objectManager.m_monster)[key].m_monsterType);
 		lua_State* L = m_objectManager.m_luaState[monsterSpecies];
@@ -279,21 +310,31 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 		case MONSTERSTATE::CHASE:
 		{
 			targetID = (*m_objectManager.m_monster)[key].m_targetID;
-			lua_getglobal(L, "findPath");
-			lua_pushinteger(L, (*m_objectManager.m_monster)[key].m_x.load());
-			lua_pushinteger(L, (*m_objectManager.m_monster)[key].m_y.load());
-			lua_pushinteger(L, (*m_objectManager.m_player)[targetID].m_x.load());
-			lua_pushinteger(L, (*m_objectManager.m_player)[targetID].m_y.load());
-			if (lua_pcall(L, 4, 2, 0) != 0) {
-				std::cerr << "[LUA알림] " << lua_tostring(L, -1) << "\n";
+			if ((*(*m_objectManager.m_player)[targetID]).m_zone != -1) {
+				int startX = (*m_objectManager.m_monster)[key].m_x.load();
+				int startY = (*m_objectManager.m_monster)[key].m_y.load();
+				int endX = (*(*m_objectManager.m_player)[targetID]).m_x.load();
+				int endY = (*(*m_objectManager.m_player)[targetID]).m_y.load();
+				lua_getglobal(L, "findPath");
+				lua_pushinteger(L, startX);
+				lua_pushinteger(L, startY);
+				lua_pushinteger(L, endX);
+				lua_pushinteger(L, endY);
+				if (lua_pcall(L, 4, 2, 0) != 0) {
+					cerr << "[LUA알림] " << lua_tostring(L, -1) << "\n";
+				}
+				else {
+					int nextX = lua_tointeger(L, -2);
+					int nextY = lua_tointeger(L, -1);
+					lua_pop(L, 2);
+					(*m_objectManager.m_monster)[key].setPosition(nextX, nextY);
+					(*m_objectManager.m_monster)[key].setZone();
+				}
 			}
 			else {
-				int nextX = lua_tointeger(L, -2);
-				int nextY = lua_tointeger(L, -1);
-				lua_pop(L, 2);
-				(*m_objectManager.m_monster)[key].setPosition(nextX, nextY);
-				(*m_objectManager.m_monster)[key].setZone();
-			}
+				(*m_objectManager.m_monster)[key].m_targetID = -1;
+				(*m_objectManager.m_monster)[key].m_monsterState = MONSTERSTATE::IDLE;
+			}		
 		}
 		break;
 		}
@@ -307,6 +348,7 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 		timer.eventType = EVENTTYPE::ACTIVE;
 		timer.actTime = system_clock::now() + 1000ms;
 		m_objectManager.m_timer.push(timer);
+		delete extOver;
 	}
 	break;
 	case OVERTYPE::MONSTERRESPAWN: 
@@ -330,11 +372,15 @@ void Iocp::processPacketIO(ExtendedOverlapped*& extOver, DWORD len, int key)
 			timer.actTime = system_clock::now() + 1000ms;
 			m_objectManager.m_timer.push(timer);
 		}		
+		delete extOver;
+		extOver = nullptr;
 	}
 	break;
 	case OVERTYPE::MONSTERATTACK:
 	{
+		cout << "여길 왜와?\n";
 		// 몬스터 공격 추가 필요
+		delete extOver;
 	}
 	break;
 	default: cout << "[알림] 알수없는 패킷.\n"; break;
@@ -351,10 +397,10 @@ void Iocp::processPacket(char* packet, int key)
 		CHARACTERINFO characterInfo{
 			"test", "test", rand() % 2000, rand() % 2000, 1, 0, 100
 		};
-		(*m_objectManager.m_player)[key].initialize(characterInfo);
-		int zoneNumber = (*m_objectManager.m_player)[key].m_zone;
+		(*(*m_objectManager.m_player)[key]).initialize(characterInfo);
+		int zoneNumber = (*(*m_objectManager.m_player)[key]).m_zone;
 		m_objectManager.m_zone[zoneNumber].insert(key);
-		(*m_objectManager.m_player)[key].sendLoginAllowPacket(LOGINRESULT::SUCCESS);
+		(*(*m_objectManager.m_player)[key]).sendLoginAllowPacket(LOGINRESULT::SUCCESS);
 		// 1. 유저가 생성된 존이 해당 유저가 처음 방문하는 경우 몬스터 생성
 		m_objectManager.checkFirstVisitZone(zoneNumber);
 		// 2. 생성된 위치를 기준으로 시야계산
@@ -367,16 +413,16 @@ void Iocp::processPacket(char* packet, int key)
 		CHARACTERINFO characterInfo{ p->ID, p->PW, };
 		// 로그인 실패시 게임종료 처리
 		if (!m_DB.login(characterInfo)) {
-			(*m_objectManager.m_player)[key].sendLoginAllowPacket(LOGINRESULT::FAILED);
+			(*(*m_objectManager.m_player)[key]).sendLoginAllowPacket(LOGINRESULT::FAILED);
 			m_objectManager.m_playerMutex.lock();
 			m_objectManager.m_player->unsafe_erase(key);
 			m_objectManager.m_playerMutex.unlock();
 			break;
 		}
-		(*m_objectManager.m_player)[key].initialize(characterInfo);
-		int zoneNumber = (*m_objectManager.m_player)[key].m_zone;		
+		(*(*m_objectManager.m_player)[key]).initialize(characterInfo);
+		int zoneNumber = (*(*m_objectManager.m_player)[key]).m_zone;
 		m_objectManager.m_zone[zoneNumber].insert(key);
-		(*m_objectManager.m_player)[key].sendLoginAllowPacket(LOGINRESULT::SUCCESS);
+		(*(*m_objectManager.m_player)[key]).sendLoginAllowPacket(LOGINRESULT::SUCCESS);
 
 		// 1. 유저가 생성된 존이 해당 유저가 처음 방문하는 경우 몬스터 생성
 		m_objectManager.checkFirstVisitZone(zoneNumber);
@@ -390,10 +436,10 @@ void Iocp::processPacket(char* packet, int key)
 	case CS_MOVE_REQUEST:
 	{		
 		CS_MOVE_REQUEST_PACKET* p = reinterpret_cast<CS_MOVE_REQUEST_PACKET*>(packet);
-		(*m_objectManager.m_player)[key].setPosition(static_cast<MOVETYPE>(p->moveType));		
-		(*m_objectManager.m_player)[key].sendMoveAllowPacket((*m_objectManager.m_player)[key], p->clientTime);
+		(*(*m_objectManager.m_player)[key]).setPosition(static_cast<MOVETYPE>(p->moveType));		
+		(*(*m_objectManager.m_player)[key]).sendMoveAllowPacket((*(*m_objectManager.m_player)[key]), p->clientTime);
 
-		int newZone = (*m_objectManager.m_player)[key].m_x.load() / ZONESIZE + ((*m_objectManager.m_player)[key].m_y.load() / ZONESIZE) * (MAPWIDTH / ZONESIZE);
+		int newZone = (*(*m_objectManager.m_player)[key]).m_x.load() / ZONESIZE + ((*(*m_objectManager.m_player)[key]).m_y.load() / ZONESIZE) * (MAPWIDTH / ZONESIZE);
 		// 1. 이동한 유저의 zone 변화 확인
 		m_objectManager.changeZone(newZone, key);
 		// 2. 유저가 이동한 존이 해당 유저가 처음 방문하는 경우 몬스터 생성

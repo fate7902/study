@@ -25,7 +25,7 @@ public:
 		: Object(other), m_exp(other.m_exp.load()),
 		m_reaminPacketData(other.m_reaminPacketData),
 		m_socket(other.m_socket), m_recvOver(other.m_recvOver),
-		m_ID(other.m_ID), m_PW(other.m_PW), m_lv(other.m_lv){
+		m_ID(other.m_ID), m_PW(other.m_PW), m_lv(other.m_lv) {
 		m_viewlist = new concurrent_unordered_set<int>(*other.m_viewlist);
 	}
 	virtual ~Player() override;
