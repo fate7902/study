@@ -33,16 +33,18 @@ function findPath(startX, startY, targetX, targetY)
 
     while #priorityQueue > 0 do
         local current = pop()
-        -- 경로 저장
+        -- 경로 관리
+        while #stack > 0 and stack[1].step >= current.step do
+            table.remove(stack, 1)
+        end
         table.insert(stack, current)
 
         -- 목표 위치에 도착하면 종료
         if current.x == targetX and current.y == targetY then
-            local firstStep = table.remove(stack, 2)
-            if firstStep == nil then
-                return startX, startY
+            if stack[2] == nil then
+                return current.x, current.y
             else
-                return firstStep.x, firstStep.y
+                return stack[2].x, stack[2].y
             end
         end
 
