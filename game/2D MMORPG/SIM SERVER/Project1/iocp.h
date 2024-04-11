@@ -14,16 +14,16 @@ constexpr int MAXTHREAD = 12;
 class Iocp : public IocpBase
 {
 private:
-	ExtendedOverlapped					m_extOver;
-	concurrent_queue<int>*				m_availableID;
-	ObjectManager						m_objectManager;
-	concurrent_queue<DBREQUEST>*		m_requestDB;
-	Database							m_DB;
+	ExtendedOverlapped							m_extOver;
+	concurrent_queue<int>						m_availableID;
+	ObjectManager								m_objectManager;
+	concurrent_queue<DBREQUEST>					m_requestDB;
+	Database									m_DB;
 
 public:
 	Iocp() = default;
 	Iocp(int port) : IocpBase(port) {}
-	~Iocp();
+	~Iocp() = default;
 
 	void initialize();
 

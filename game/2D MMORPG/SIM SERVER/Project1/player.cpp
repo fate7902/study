@@ -2,16 +2,6 @@
 #include "player.h"
 #include "monster.h"
 
-Player::Player()
-{
-	m_viewlist = new concurrent_unordered_set<int>;
-}
-
-Player::~Player()
-{
-	delete m_viewlist;
-}
-
 void Player::initialize(CHARACTERINFO& characterInfo)
 {
 	setPosition(characterInfo.x, characterInfo.y);
@@ -62,29 +52,29 @@ void Player::sendLoginAllowPacket(LOGINRESULT loginResult)
 	sendPacket(&p);
 }
 
-void Player::sendMoveAllowPacket(Object& obj, unsigned time)
+void Player::sendMoveAllowPacket(const shared_ptr<Object>& obj, unsigned time)
 {
 	SC_MOVE_ALLOW_PACKET p;
 	p.size = sizeof(SC_MOVE_ALLOW_PACKET);
 	p.type = SC_MOVE_ALLOW;
-	p.x = obj.m_x.load();
-	p.y = obj.m_y.load();
-	p.key = obj.m_id;
+	p.x = obj->m_x.load();
+	p.y = obj->m_y.load();
+	p.key = obj->m_id;
 	p.clientTime = time;
 	sendPacket(&p);
 }
 
-void Player::sendAddObjectPacket(Object& obj)
+void Player::sendAddObjectPacket(const shared_ptr<Object>& obj)
 {
 	SC_ADDOBJECT_ALLOW_PACKET p;
 	p.size = sizeof(SC_ADDOBJECT_ALLOW_PACKET);
 	p.type = SC_ADDOBJECT_ALLOW;
-	p.x = obj.m_x.load();
-	p.y = obj.m_y.load();
-	p.key = obj.m_id;
+	p.x = obj->m_x.load();
+	p.y = obj->m_y.load();
+	p.key = obj->m_id;
 	if (p.key >= MAXUSER) {
-		Monster* monster = dynamic_cast<Monster*>(&obj);
-		p.monsterType = static_cast<int>(monster->m_monsterType);
+		shared_ptr<Monster> monsterPtr = dynamic_pointer_cast<Monster>(obj);
+		p.monsterType = static_cast<int>(monsterPtr->m_monsterType);
 	}
 	sendPacket(&p);
 }

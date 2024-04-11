@@ -21,6 +21,7 @@
 #include <atomic>
 #include <mutex>
 #include <chrono>
+#include <memory>
 
 // DB관련 헤더
 #include <sqlext.h>
@@ -44,6 +45,7 @@ constexpr int MAPWIDTH = 2000;
 constexpr int MAPHEIGHT = 2000;
 constexpr int ZONESIZE = 50;
 constexpr int ZONE = MAPWIDTH / ZONESIZE * MAPHEIGHT / ZONESIZE;
+constexpr int ZONEGROUP = 4;
 constexpr int MAXUSER = 5000;
 constexpr int MAXMONSTER = 200000;
 constexpr int MAXMONSTERSPECIES = 3;

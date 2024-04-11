@@ -9,20 +9,18 @@ constexpr int ATTACKRANGE = 1;
 class ObjectManager
 {
 public:
-	concurrent_unordered_map<int, Player*>*	m_player;
-	mutex									m_playerMutex;
-	concurrent_unordered_map<int, Player*>* m_logoutPlayer;
-	mutex									m_logoutPlayerMutex;
-	concurrent_unordered_map<int, Monster>* m_monster;
+	concurrent_unordered_map<int, shared_ptr<Player>>				m_player;
+	mutex															m_playerMutex;
+	concurrent_unordered_map<int, shared_ptr<Monster>>				m_monster;
 
-	concurrent_unordered_set<int>*			m_zone;
-	mutex*									m_zoneMutex;
+	concurrent_unordered_set<int>*									m_zone;
+	mutex*															m_zoneMutex;
 
-	lua_State*								m_luaState[MAXMONSTERSPECIES];
-	mutex*									m_luaMutex;
+	lua_State*														m_luaState[MAXMONSTERSPECIES];
+	mutex															m_luaMutex[MAXMONSTERSPECIES];
 
-	concurrent_priority_queue<TIMER>		m_timer;
-	atomic<bool>*							m_bZone;
+	concurrent_priority_queue<TIMER>								m_timer;
+	atomic<bool>*													m_bZone;
 
 public:
 	ObjectManager();
@@ -32,7 +30,7 @@ public:
 	void monsterInitialize();
 
 	// 두 오브젝트의 거리 반환 함수
-	double calcInRange(Object& objA, Object& objB);
+	double calcInRange(const shared_ptr<Object>& objA, const shared_ptr<Object>& objB);
 
 	// 구역 변화 적용
 	void changeZone(int zoneNumber, int key);
